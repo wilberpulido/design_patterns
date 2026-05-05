@@ -1,0 +1,5 @@
+# Java compiled files
+*.class
+
+# TypeScript compiled output
+dist/
