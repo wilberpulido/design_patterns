@@ -50,4 +50,11 @@ The client talks only to the Target Interface. The Adapter does all the translat
 - The pattern is especially powerful when combined with dependency injection: the adapter is injected into the client, so swapping providers is a one-line change at the composition root.
 
 ## Q&A
-_Questions and answers will be added here as the session progresses._
+
+**¿La función del Adapter tiene que limitarse a modificar la estructura de datos para adaptarse al SDK? ¿O podría también incluir lógica de negocio en medio?**
+
+Técnicamente puede, pero no debería. El Adapter tiene una responsabilidad única: traducir interfaces. Mezclar lógica de negocio contamina el patrón y viola el principio de responsabilidad única.
+
+Lo que sí le corresponde: traducir nombres de métodos, convertir formatos (callback → Promise, XML → JSON), rellenar parámetros que la interfaz no pide pero el SDK necesita, mapear nombres de campos (`name` → `$name`).
+
+Lo que no le corresponde: condicionales de negocio, efectos secundarios de dominio (notificar, aplicar descuentos, etc.). Si necesitas lógica antes o después de llamar al SDK, esa lógica va en el servicio que usa el Adapter, no dentro de él. Si alguien lee un Adapter y ve lógica de negocio, es señal de que esa lógica está en el lugar equivocado.
