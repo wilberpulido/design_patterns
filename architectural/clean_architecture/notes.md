@@ -141,21 +141,47 @@ Clean Architecture, **Hexagonal Architecture**, and **Onion Architecture** share
 fundamental principle: **dependencies flow inward**, and the domain (entities) is completely
 isolated at the centre.
 
-| Concept                   | Clean Architecture              | Hexagonal                     | Onion                        |
-|---------------------------|---------------------------------|-------------------------------|------------------------------|
-| Innermost ring            | Entities                        | Application Core              | Domain Model                 |
-| Second ring               | Use Cases (Interactors)         | Application Service           | Domain Services              |
-| Third ring                | Interface Adapters              | Adapters (primary/secondary)  | Application Services         |
-| Outermost ring            | Frameworks & Drivers            | (implied)                     | Infrastructure               |
-| Output delivery mechanism | Output Port → Presenter         | Service returns a value        | Service returns a value      |
-| Key addition              | Explicit InputData/OutputData   | Port naming (primary/secondary)| Onion layers                |
-| Author                    | Robert C. Martin, 2012          | Alistair Cockburn, 2005        | Jeffrey Palermo, 2008        |
+| Concept          | Clean Architecture          | Hexagonal               | Onion                  |
+|------------------|-----------------------------|-------------------------|------------------------|
+| Innermost ring   | Entities                    | Application Core        | Domain Model           |
+| Second ring      | Use Cases (Interactors)     | Application Service     | Domain Services        |
+| Third ring       | Interface Adapters          | Adapters (prim/sec)     | Application Services   |
+| Outermost ring   | Frameworks & Drivers        | (implied)               | Infrastructure         |
+| Output delivery  | Output Port → Presenter     | Service returns value   | Service returns value  |
+| Key addition     | InputData / OutputData      | Port naming (prim/sec)  | Onion layers           |
+| Author           | Martin (2012)               | Cockburn (2005)         | Palermo (2008)         |
 
 The key differentiator of Clean Architecture is the **explicit Presenter/Output Port pattern**
 and the more detailed naming of what belongs in each ring. If you already understand Hexagonal,
 Clean Architecture is a refinement, not a revolution.
 
 ## Q&A
+
+**P: ¿Qué es un Interactor y en qué se diferencia de lo que hace un caso de uso en Hexagonal?**
+
+Un **Interactor** es el nombre que usa Clean Architecture para la clase que implementa el caso de uso (Anillo 2). Orquesta entidades y gateways, implementa el `InputPort` (el controller lo invoca), y en su forma **estricta** nunca hace `return` de un valor: en cambio, empuja el resultado (`OutputData`) hacia el `OutputPort`, que el Presenter implementa.
+
+Esa es la diferencia clave frente a Hexagonal: un servicio de aplicación en Hexagonal típicamente **retorna** un valor directamente al llamador. El Interactor estricto en cambio **empuja** el resultado a través de un output port — esto hace explícito el punto donde el flujo de datos cruza hacia la capa de presentación, y permite cambiar completamente cómo se muestra el resultado sin tocar el Interactor.
+
+**P: ¿Cuál es la diferencia real entre una regla que vive en la Entity y una que vive en el Use Case?**
+
+No es que una tenga dependencias externas y la otra no — ni la Entity ni el Use Case dependen de infraestructura concreta (HTTP, DB), ambas están limpias de eso. La diferencia real es el **alcance** de la regla:
+
+- **Entity**: una regla que sería verdad sin importar qué aplicación se construya sobre ese concepto de negocio. Ejemplo: "una orden no puede enviarse si no está confirmada" — es intrínseco al concepto de `Order`, existiría en cualquier sistema que maneje órdenes, sea web, CLI o batch.
+- **Use Case**: una regla específica de *esta* aplicación, sobre cómo se orquesta un flujo concreto. Ejemplo: "notificar al cliente por email después de enviar la orden" — es una decisión de este producto, no una verdad universal sobre qué es una orden.
+
+**P: Si tengo un `OrderRepositoryPort` en Hexagonal, ¿cuál es el equivalente en Clean Architecture y dónde vive?**
+
+El equivalente se llama **Gateway**, no "use case". La *interfaz* del Gateway se define en el Anillo 2 (junto al `InputPort`/`OutputPort` del caso de uso) — es parte del núcleo. Su *implementación concreta* vive en el Anillo 3/4 (Interface Adapters / Frameworks). Es exactamente el mismo patrón que en Hexagonal (la interfaz vive adentro, la implementación afuera); solo cambia el nombre: `Gateway` en Clean Architecture, `Secondary Port` en Hexagonal.
+
+**P: ¿Cuál es la definición de gateways?**
+
+Un **Gateway** es la interfaz que un Use Case/Interactor define para acceder a un sistema externo (base de datos, servicio de correo, API de terceros), sin saber nada de la tecnología concreta que hay detrás.
+
+- La **interfaz** (el contrato: qué operaciones expone, ej. `save(order)`, `findById(id)`) se define en el **Anillo 2** (Use Cases), como parte del núcleo.
+- La **implementación concreta** de esa interfaz (usando Eloquent, PDO, JDBC, etc.) vive en el **Anillo 3/4** (Interface Adapters / Frameworks & Drivers).
+
+Es el mismo concepto que un **puerto secundario** en Hexagonal: el núcleo declara qué necesita, y algo de afuera lo satisface. Solo cambia el nombre según la arquitectura.
 
 ---
 
@@ -303,16 +329,44 @@ Clean Architecture, **Arquitectura Hexagonal** y **Onion Architecture** comparte
 principio fundamental: **las dependencias fluyen hacia adentro**, y el dominio (entidades) está
 completamente aislado en el centro.
 
-| Concepto                    | Clean Architecture              | Hexagonal                      | Onion                        |
-|-----------------------------|---------------------------------|--------------------------------|------------------------------|
-| Anillo más interno          | Entities                        | Núcleo de aplicación           | Modelo de dominio            |
-| Segundo anillo              | Casos de Uso (Interactors)      | Application Service            | Domain Services              |
-| Tercer anillo               | Interface Adapters              | Adaptadores (primario/secund.) | Application Services         |
-| Anillo más externo          | Frameworks & Drivers            | (implícito)                    | Infraestructura              |
-| Mecanismo de entrega salida | Output Port → Presenter         | El servicio retorna un valor   | El servicio retorna un valor |
-| Adición clave               | InputData/OutputData explícitos | Nomenclatura de puertos        | Capas Onion                  |
-| Autor                       | Robert C. Martin, 2012          | Alistair Cockburn, 2005        | Jeffrey Palermo, 2008        |
+| Concepto           | Clean Architecture          | Hexagonal               | Onion                  |
+|--------------------|-----------------------------|-------------------------|------------------------|
+| Anillo interno     | Entities                    | Núcleo de aplicación    | Modelo de dominio      |
+| Segundo anillo     | Casos de Uso (Interactors)  | Application Service     | Domain Services        |
+| Tercer anillo      | Interface Adapters          | Adaptadores (prim/sec)  | Application Services   |
+| Anillo externo     | Frameworks & Drivers        | (implícito)             | Infraestructura        |
+| Entrega de salida  | Output Port → Presenter     | Servicio retorna valor  | Servicio retorna valor |
+| Adición clave      | InputData / OutputData      | Nomenclatura de puertos | Capas Onion            |
+| Autor              | Martin (2012)               | Cockburn (2005)         | Palermo (2008)         |
 
 El diferenciador clave de Clean Architecture es el **patrón explícito Presenter/Output Port**
 y la nomenclatura más detallada sobre qué pertenece a cada anillo. Si ya entiendes Hexagonal,
 Clean Architecture es un refinamiento, no una revolución.
+
+## Preguntas y Respuestas
+
+**P: ¿Qué es un Interactor y en qué se diferencia de lo que hace un caso de uso en Hexagonal?**
+
+Un **Interactor** es el nombre que usa Clean Architecture para la clase que implementa el caso de uso (Anillo 2). Orquesta entidades y gateways, implementa el `InputPort` (el controller lo invoca), y en su forma **estricta** nunca hace `return` de un valor: en cambio, empuja el resultado (`OutputData`) hacia el `OutputPort`, que el Presenter implementa.
+
+Esa es la diferencia clave frente a Hexagonal: un servicio de aplicación en Hexagonal típicamente **retorna** un valor directamente al llamador. El Interactor estricto en cambio **empuja** el resultado a través de un output port — esto hace explícito el punto donde el flujo de datos cruza hacia la capa de presentación, y permite cambiar completamente cómo se muestra el resultado sin tocar el Interactor.
+
+**P: ¿Cuál es la diferencia real entre una regla que vive en la Entity y una que vive en el Use Case?**
+
+No es que una tenga dependencias externas y la otra no — ni la Entity ni el Use Case dependen de infraestructura concreta (HTTP, DB), ambas están limpias de eso. La diferencia real es el **alcance** de la regla:
+
+- **Entity**: una regla que sería verdad sin importar qué aplicación se construya sobre ese concepto de negocio. Ejemplo: "una orden no puede enviarse si no está confirmada" — es intrínseco al concepto de `Order`, existiría en cualquier sistema que maneje órdenes, sea web, CLI o batch.
+- **Use Case**: una regla específica de *esta* aplicación, sobre cómo se orquesta un flujo concreto. Ejemplo: "notificar al cliente por email después de enviar la orden" — es una decisión de este producto, no una verdad universal sobre qué es una orden.
+
+**P: Si tengo un `OrderRepositoryPort` en Hexagonal, ¿cuál es el equivalente en Clean Architecture y dónde vive?**
+
+El equivalente se llama **Gateway**, no "use case". La *interfaz* del Gateway se define en el Anillo 2 (junto al `InputPort`/`OutputPort` del caso de uso) — es parte del núcleo. Su *implementación concreta* vive en el Anillo 3/4 (Interface Adapters / Frameworks). Es exactamente el mismo patrón que en Hexagonal (la interfaz vive adentro, la implementación afuera); solo cambia el nombre: `Gateway` en Clean Architecture, `Secondary Port` en Hexagonal.
+
+**P: ¿Cuál es la definición de gateways?**
+
+Un **Gateway** es la interfaz que un Use Case/Interactor define para acceder a un sistema externo (base de datos, servicio de correo, API de terceros), sin saber nada de la tecnología concreta que hay detrás.
+
+- La **interfaz** (el contrato: qué operaciones expone, ej. `save(order)`, `findById(id)`) se define en el **Anillo 2** (Use Cases), como parte del núcleo.
+- La **implementación concreta** de esa interfaz (usando Eloquent, PDO, JDBC, etc.) vive en el **Anillo 3/4** (Interface Adapters / Frameworks & Drivers).
+
+Es el mismo concepto que un **puerto secundario** en Hexagonal: el núcleo declara qué necesita, y algo de afuera lo satisface. Solo cambia el nombre según la arquitectura.

@@ -167,3 +167,17 @@ php artisan queue:work --queue=python-api --concurrency=3
 
 Así se garantiza que nunca más de 3 jobs de ese tipo corren en paralelo, sin middleware
 adicional. Todos los jobs que deban respetar ese límite se despachan a esa cola.
+
+**P: El backoff lo recuerdo, es el tiempo que asignamos entre llamada y llamada, ¿no recuerdo qué es jitter?**
+
+Jitter es un componente aleatorio que se añade al tiempo de backoff para evitar que
+los reintentos de distintos clientes se sincronicen.
+
+Sin jitter: si varios clientes fallan a la vez, todos calculan el mismo backoff
+exponencial (1s, 2s, 4s, 8s...) y todos reintentan exactamente al mismo tiempo —
+generando una nueva oleada de tráfico simultáneo justo cuando el servicio intenta
+recuperarse (thundering herd).
+
+Con jitter: en vez de esperar exactamente 4s, cada cliente espera algo como
+`4s ± un valor aleatorio` (ej. entre 2s y 6s), repartiendo los reintentos en el tiempo
+en lugar de que lleguen todos juntos.

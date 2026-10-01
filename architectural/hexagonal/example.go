@@ -17,18 +17,18 @@ import "fmt"
 type DeviceStatus string
 
 const (
-	StatusOff     DeviceStatus = "off"
-	StatusOn      DeviceStatus = "on"
-	StatusLocked  DeviceStatus = "locked"
+	StatusOff      DeviceStatus = "off"
+	StatusOn       DeviceStatus = "on"
+	StatusLocked   DeviceStatus = "locked"
 	StatusUnlocked DeviceStatus = "unlocked"
 )
 
 type Device struct {
-	ID       string
-	Name     string
-	Type     string // light | thermostat | lock
-	Status   DeviceStatus
-	Setting  int // brightness (0-100) or temperature (°C)
+	ID      string
+	Name    string
+	Type    string // light | thermostat | lock
+	Status  DeviceStatus
+	Setting int // brightness (0-100) or temperature (°C)
 }
 
 // Domain rule: a locked device cannot be turned on remotely (safety invariant)
@@ -253,13 +253,13 @@ func main() {
 
 	repo := NewInMemoryDeviceRepository(
 		&Device{ID: "living-light-1", Name: "Living Room Light", Type: "light", Status: StatusOff},
-		&Device{ID: "thermostat-1",   Name: "Main Thermostat",   Type: "thermostat", Status: StatusOff, Setting: 18},
+		&Device{ID: "thermostat-1", Name: "Main Thermostat", Type: "thermostat", Status: StatusOff, Setting: 18},
 	)
 
-	gateway   := &MqttDeviceGateway{}
+	gateway := &MqttDeviceGateway{}
 	publisher := &LogEventPublisher{}
-	service   := NewHomeAutomationService(repo, gateway, publisher)
-	handler   := &SmartHomeHttpHandler{control: service}
+	service := NewHomeAutomationService(repo, gateway, publisher)
+	handler := &SmartHomeHttpHandler{control: service}
 
 	fmt.Println("--- Turn on the living room light ---")
 	handler.PutDeviceStatus("living-light-1", "on", 0)

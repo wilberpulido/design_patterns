@@ -103,19 +103,96 @@ Hexagonal Architecture, **Onion Architecture**, and **Clean Architecture** are t
 for the same fundamental principle: **dependencies point inward**, and the domain model
 is completely isolated at the centre.
 
-| Concept                 | Hexagonal                    | Onion                       | Clean Architecture          |
-|-------------------------|------------------------------|-----------------------------|-----------------------------|
-| Centre                  | Application core             | Domain model                | Entities + Use Cases        |
-| Interface mechanism     | Ports (primary / secondary)  | Layer interfaces            | Boundaries / Use Case ports |
-| Implementations         | Adapters                     | Infrastructure outer layer  | Interface Adapters ring     |
-| Term for "left side"    | Driving adapter              | —                           | Controller / Presenter      |
-| Term for "right side"   | Driven adapter               | Infrastructure              | Gateway / Repository        |
-| Author                  | Alistair Cockburn (2005)     | Jeffrey Palermo (2008)      | Robert C. Martin (2012)     |
+| Concept              | Hexagonal              | Onion                  | Clean Architecture       |
+|----------------------|------------------------|------------------------|--------------------------|
+| Centre               | Application core       | Domain model           | Entities + Use Cases     |
+| Interface mechanism  | Ports (primary/secondary) | Layer interfaces    | Boundaries / UC ports    |
+| Implementations      | Adapters               | Infrastructure layer   | Interface Adapters ring  |
+| Driving side term    | Driving adapter        | —                      | Controller / Presenter   |
+| Driven side term     | Driven adapter         | Infrastructure         | Gateway / Repository     |
+| Author               | Cockburn (2005)        | Palermo (2008)         | Martin (2012)            |
 
 If you understand one, you understand all three. The differences are naming, emphasis,
 and how strictly they define each ring — not the underlying principle.
 
 ## Q&A
+
+**P: ¿Solo los puertos y la lógica de negocio que usa esos puertos son el núcleo? ¿Los adaptadores están afuera?**
+
+Sí. El núcleo (hexágono) tiene tres capas, todas adentro:
+
+- **Dominio**: entidades con reglas de negocio puras (`Ride`). Cero dependencias externas.
+- **Casos de uso**: orquestadores que coordinan el dominio y usan puertos secundarios (`RideMatchingService`).
+- **Puertos**: interfaces definidas por el núcleo — los primarios exponen la API del núcleo hacia afuera, los secundarios describen lo que el núcleo necesita de la infraestructura.
+
+Los adaptadores siempre están afuera. Su único rol es traducir el mundo exterior al lenguaje del núcleo, o viceversa. El núcleo no los conoce.
+
+```
+┌──────────────────────── HEXÁGONO (núcleo) ────────────────────────┐
+│                                                                    │
+│  PUERTOS PRIMARIOS       RequestRidePort, StartRidePort           │
+│  (la "cara" del hexágono hacia afuera — el core los define)       │
+│                                 ↑                                  │
+│  CASOS DE USO            RideMatchingService                      │
+│  (orquesta el dominio, usa puertos secundarios)                   │
+│                                 ↓                                  │
+│  PUERTOS SECUNDARIOS     RideRepositoryPort, DriverNotifierPort   │
+│  (el core define qué necesita — los adaptadores lo satisfacen)    │
+│                                                                    │
+│  DOMINIO                 Ride  (entidad con reglas de negocio)    │
+│  (objetos puros, cero dependencias)                               │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+          ↑ conectan                            ↓ conectan
+  RideHttpController                   InMemoryRideRepository
+  (adaptador primario)                 PushNotificationAdapter
+                                       (adaptadores secundarios)
+```
+
+La regla práctica para distinguirlos: ¿depende de tecnología concreta (HTTP, Eloquent, SMTP, Redis)? → adaptador. ¿Solo interfaces puras y lógica de negocio? → núcleo.
+
+---
+
+**P: En el ejemplo PHP, ¿`RideMatchingService` es el núcleo? Al implementar los puertos primarios, ¿no se podría decir que depende de ellos?**
+
+`RideMatchingService` es el núcleo de la aplicación (junto con la entidad de dominio `Ride`). Implementar `RequestRidePort` y `StartRidePort` no crea una dependencia externa porque los puertos primarios son **propiedad del núcleo y están definidos dentro de él** — son la superficie de API pública del núcleo, no algo externo a él.
+
+La distinción clave:
+
+| Relación | Dirección de dependencia |
+|---|---|
+| El servicio *implementa* los puertos primarios | Los puertos pertenecen al núcleo — sin dependencia externa |
+| El servicio *depende de* los puertos secundarios | El núcleo define el contrato, el adaptador lo satisface — inversión real |
+| El adaptador *depende de* los puertos primarios | El adaptador depende del núcleo — flujo correcto |
+
+El valor real de las interfaces de puertos primarios lo siente el **adaptador**, no el servicio: `RideHttpController` depende de `RequestRidePort` en lugar de depender directamente de `RideMatchingService`, por lo que puede probarse inyectando un stub — sin necesidad de cablear el caso de uso real.
+
+Las únicas dependencias externas genuinas de `RideMatchingService` son `RideRepositoryPort` y `DriverNotifierPort`, y esas están correctamente invertidas mediante el DIP.
+
+---
+
+**P: ¿Qué son los ports y qué son los adapters? Da un ejemplo en un contexto distinto al de rides.**
+
+Un **port** es una interfaz que pertenece y es definida por el núcleo de la aplicación — no por el adaptador. El núcleo declara "esto es lo que necesito" (puerto secundario) o "esto es lo que ofrezco" (puerto primario), sin saber nada de tecnología concreta.
+
+- **Puerto primario** (driving): la API que el núcleo expone hacia afuera para que algo externo lo invoque.
+- **Puerto secundario** (driven): lo que el núcleo necesita de afuera, y por eso lo define como contrato.
+
+Un **adapter** no "adapta datos a un puerto" en abstracto: traduce específicamente entre la tecnología externa concreta (HTTP, SQL, SMTP) y el lenguaje del puerto. Hay dos tipos según la dirección:
+
+- Adaptador primario: traduce entrada externa → llamada al puerto primario (ej. un controller HTTP). El adaptador se adapta al núcleo para invocarlo.
+- Adaptador secundario: implementa el puerto secundario usando tecnología real (ej. un repositorio Postgres).
+
+Ejemplo en un e-commerce (contexto distinto a rides):
+
+| Elemento | Tipo | Ejemplo |
+|---|---|---|
+| `CreateOrderPort`, `ProcessOrderPort` | Puerto primario | API del núcleo para crear/procesar una orden |
+| `ProductPort` | Puerto secundario | El núcleo declara qué necesita saber del catálogo de productos |
+| `OrderNotifierPort` | Puerto secundario | El núcleo declara que necesita notificar cambios de estado |
+| `OrderHttpController` | Adaptador primario | Traduce un request HTTP en una llamada a `CreateOrderPort` |
+| `PostgresProductRepository` | Adaptador secundario | Implementa `ProductPort` contra una base de datos real |
+| `EmailOrderNotifier` | Adaptador secundario | Implementa `OrderNotifierPort` enviando un correo |
 
 ---
 
@@ -225,14 +302,93 @@ La Arquitectura Hexagonal, **Onion Architecture** y **Clean Architecture** son t
 para el mismo principio fundamental: **las dependencias apuntan hacia adentro**, y el modelo
 de dominio está completamente aislado en el centro.
 
-| Concepto                | Hexagonal                       | Onion                        | Clean Architecture          |
-|-------------------------|---------------------------------|------------------------------|-----------------------------|
-| Centro                  | Núcleo de aplicación            | Modelo de dominio            | Entidades + Casos de uso    |
-| Mecanismo de interfaces | Puertos (primario / secundario) | Interfaces de capa           | Boundaries / puertos de UC  |
-| Implementaciones        | Adaptadores                     | Capa de infraestructura      | Anillo de Interface Adapters|
-| Término para "lado izq" | Adaptador conductor             | —                            | Controller / Presenter      |
-| Término para "lado der" | Adaptador conducido             | Infraestructura              | Gateway / Repository        |
-| Autor                   | Alistair Cockburn (2005)        | Jeffrey Palermo (2008)       | Robert C. Martin (2012)     |
+| Concepto             | Hexagonal                | Onion                  | Clean Architecture       |
+|----------------------|--------------------------|------------------------|--------------------------|
+| Centro               | Núcleo de aplicación     | Modelo de dominio      | Entidades + Casos de uso |
+| Mecanismo            | Puertos (prim/secund)    | Interfaces de capa     | Boundaries / UC ports    |
+| Implementaciones     | Adaptadores              | Capa infraestructura   | Interface Adapters ring  |
+| Lado conductor       | Adaptador conductor      | —                      | Controller / Presenter   |
+| Lado conducido       | Adaptador conducido      | Infraestructura        | Gateway / Repository     |
+| Autor                | Cockburn (2005)          | Palermo (2008)         | Martin (2012)            |
 
 Si entiendes uno, entiendes los tres. Las diferencias son de nomenclatura y énfasis,
 no de principio subyacente.
+
+## Preguntas y Respuestas
+
+**P: ¿Qué son los ports y qué son los adapters? Da un ejemplo en un contexto distinto al de rides.**
+
+Un **port** es una interfaz que pertenece y es definida por el núcleo de la aplicación — no por el adaptador. El núcleo declara "esto es lo que necesito" (puerto secundario) o "esto es lo que ofrezco" (puerto primario), sin saber nada de tecnología concreta.
+
+- **Puerto primario** (driving): la API que el núcleo expone hacia afuera para que algo externo lo invoque.
+- **Puerto secundario** (driven): lo que el núcleo necesita de afuera, y por eso lo define como contrato.
+
+Un **adapter** no "adapta datos a un puerto" en abstracto: traduce específicamente entre la tecnología externa concreta (HTTP, SQL, SMTP) y el lenguaje del puerto. Hay dos tipos según la dirección:
+
+- Adaptador primario: traduce entrada externa → llamada al puerto primario (ej. un controller HTTP). El adaptador se adapta al núcleo para invocarlo.
+- Adaptador secundario: implementa el puerto secundario usando tecnología real (ej. un repositorio Postgres).
+
+Ejemplo en un e-commerce (contexto distinto a rides):
+
+| Elemento | Tipo | Ejemplo |
+|---|---|---|
+| `CreateOrderPort`, `ProcessOrderPort` | Puerto primario | API del núcleo para crear/procesar una orden |
+| `ProductPort` | Puerto secundario | El núcleo declara qué necesita saber del catálogo de productos |
+| `OrderNotifierPort` | Puerto secundario | El núcleo declara que necesita notificar cambios de estado |
+| `OrderHttpController` | Adaptador primario | Traduce un request HTTP en una llamada a `CreateOrderPort` |
+| `PostgresProductRepository` | Adaptador secundario | Implementa `ProductPort` contra una base de datos real |
+| `EmailOrderNotifier` | Adaptador secundario | Implementa `OrderNotifierPort` enviando un correo |
+
+---
+
+**P: ¿Solo los puertos y la lógica de negocio que usa esos puertos son el núcleo? ¿Los adaptadores están afuera?**
+
+Sí. El núcleo (hexágono) tiene tres capas, todas adentro:
+
+- **Dominio**: entidades con reglas de negocio puras (`Ride`). Cero dependencias externas.
+- **Casos de uso**: orquestadores que coordinan el dominio y usan puertos secundarios (`RideMatchingService`).
+- **Puertos**: interfaces definidas por el núcleo — los primarios exponen la API del núcleo hacia afuera, los secundarios describen lo que el núcleo necesita de la infraestructura.
+
+Los adaptadores siempre están afuera. Su único rol es traducir el mundo exterior al lenguaje del núcleo, o viceversa. El núcleo no los conoce.
+
+```
+┌──────────────────────── HEXÁGONO (núcleo) ────────────────────────┐
+│                                                                    │
+│  PUERTOS PRIMARIOS       RequestRidePort, StartRidePort           │
+│  (la "cara" del hexágono hacia afuera — el core los define)       │
+│                                 ↑                                  │
+│  CASOS DE USO            RideMatchingService                      │
+│  (orquesta el dominio, usa puertos secundarios)                   │
+│                                 ↓                                  │
+│  PUERTOS SECUNDARIOS     RideRepositoryPort, DriverNotifierPort   │
+│  (el core define qué necesita — los adaptadores lo satisfacen)    │
+│                                                                    │
+│  DOMINIO                 Ride  (entidad con reglas de negocio)    │
+│  (objetos puros, cero dependencias)                               │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+          ↑ conectan                            ↓ conectan
+  RideHttpController                   InMemoryRideRepository
+  (adaptador primario)                 PushNotificationAdapter
+                                       (adaptadores secundarios)
+```
+
+La regla práctica para distinguirlos: ¿depende de tecnología concreta (HTTP, Eloquent, SMTP, Redis)? → adaptador. ¿Solo interfaces puras y lógica de negocio? → núcleo.
+
+---
+
+**P: En el ejemplo PHP, ¿`RideMatchingService` es el núcleo? Al implementar los puertos primarios, ¿no se podría decir que depende de ellos?**
+
+`RideMatchingService` es el núcleo de la aplicación (junto con la entidad de dominio `Ride`). Implementar `RequestRidePort` y `StartRidePort` no crea una dependencia externa porque los puertos primarios son **propiedad del núcleo y están definidos dentro de él** — son la superficie de API pública del núcleo, no algo externo a él.
+
+La distinción clave:
+
+| Relación | Dirección de dependencia |
+|---|---|
+| El servicio *implementa* los puertos primarios | Los puertos pertenecen al núcleo — sin dependencia externa |
+| El servicio *depende de* los puertos secundarios | El núcleo define el contrato, el adaptador lo satisface — inversión real |
+| El adaptador *depende de* los puertos primarios | El adaptador depende del núcleo — flujo correcto |
+
+El valor real de las interfaces de puertos primarios lo siente el **adaptador**, no el servicio: `RideHttpController` depende de `RequestRidePort` en lugar de depender directamente de `RideMatchingService`, por lo que puede probarse inyectando un stub — sin necesidad de cablear el caso de uso real.
+
+Las únicas dependencias externas genuinas de `RideMatchingService` son `RideRepositoryPort` y `DriverNotifierPort`, y esas están correctamente invertidas mediante el DIP.
