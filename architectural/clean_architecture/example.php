@@ -158,9 +158,22 @@ class EnrollStudentInteractor implements EnrollStudentInputPort
             return;
         }
 
-        // Business rules enforced by the entities themselves — the interactor only orchestrates
-        $student->enrollIn($course->getId());
-        $course->acceptEnrollment();
+        // Business rules enforced by the entities themselves — the interactor only orchestrates.
+        // Entities signal a violated rule by throwing; translating that into an output-port
+        // call is the interactor's job, so the controller never sees domain exceptions.
+        // Only DomainException is caught: infrastructure failures must not be disguised as 422s.
+        try {
+            $student->enrollIn($course->getId());
+            $course->acceptEnrollment();
+        } catch (\DomainException $e) {
+            // matiz: if enrollIn() succeeds but acceptEnrollment() throws, the student was already
+            // mutated in memory (and the in-memory gateway holds that same reference), leaving a
+            // half-applied change. Real apps wrap this in a transaction (DB::transaction() in
+            // Laravel) or validate every rule before mutating any entity.
+            echo "[EnrollStudentInteractor] Business rule violated — routing it to the presenter\n";
+            $this->presenter->presentError($e->getMessage());
+            return;
+        }
 
         $this->students->save($student);
         $this->courses->save($course);
