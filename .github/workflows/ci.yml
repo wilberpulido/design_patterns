@@ -1,0 +1,66 @@
+name: CI
+
+# When the workflow runs: on every push to any branch and on every pull request.
+on:
+  push:
+  pull_request:
+
+# Least privilege: the jobs only need to read the repository.
+permissions:
+  contents: read
+
+jobs:
+  # Job 1: unit tests. Runs on its own fresh VM.
+  tests:
+    name: PHP tests (PHPUnit)
+    runs-on: ubuntu-latest
+    steps:
+      # The VM starts empty: download the repository first.
+      - uses: actions/checkout@v5
+
+      # Install the minimum PHP version declared in composer.json ("^8.4").
+      # coverage: none → skips Xdebug/PCOV, faster when we don't need coverage reports.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      # Install exactly the versions pinned in composer.lock (including PHPUnit from require-dev).
+      # --no-interaction: nobody is at the keyboard; --prefer-dist: download zips, not git clones.
+      - run: composer install --no-interaction --prefer-dist --no-progress
+
+      # PHPUnit lives in vendor/bin because Composer installed it. Exit code ≠ 0 → job fails.
+      - run: vendor/bin/phpunit
+
+  # Job 2: smoke test. Runs in PARALLEL with "tests" on another VM: they share nothing.
+  # It checks that every example.php runs to completion (exit code 0).
+  smoke:
+    name: PHP examples (smoke run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      # Needed here too: migrated examples load classes through vendor/autoload.php.
+      - run: composer install --no-interaction --prefer-dist --no-progress
+
+      # Run every example from its own folder (like a human would) and collect all
+      # failures instead of stopping at the first one, so the log shows the full picture.
+      - name: Run every example.php
+        run: |
+          failed=0
+          for file in */*/example.php; do
+            echo "::group::$file"
+            if (cd "$(dirname "$file")" && php example.php); then
+              echo "OK: $file"
+            else
+              echo "::error file=$file::$file exited with a non-zero code"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $failed
