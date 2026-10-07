@@ -22,9 +22,9 @@ jobs:
       # coverage: none → skips Xdebug/PCOV, faster when we don't need coverage reports.
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: "8.4"
           coverage: none
-
+          ini-values: display_errors=On, display_startup_errors=On, error_reporting=-1, zend.assertions=1
       # Install exactly the versions pinned in composer.lock (including PHPUnit from require-dev).
       # --no-interaction: nobody is at the keyboard; --prefer-dist: download zips, not git clones.
       - run: composer install --no-interaction --prefer-dist --no-progress
@@ -42,7 +42,7 @@ jobs:
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: "8.4"
           coverage: none
 
       # Needed here too: migrated examples load classes through vendor/autoload.php.
