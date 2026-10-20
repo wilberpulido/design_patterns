@@ -183,6 +183,36 @@ Un **Gateway** es la interfaz que un Use Case/Interactor define para acceder a u
 
 Es el mismo concepto que un **puerto secundario** en Hexagonal: el núcleo declara qué necesita, y algo de afuera lo satisface. Solo cambia el nombre según la arquitectura.
 
+**P: Si una Entity lanza una `DomainException` (ej. "el alumno ya está inscripto"), ¿quién debería atraparla: la Entity, el Interactor o el Controller?**
+
+El **Interactor**. La Entity solo hace cumplir la regla de dominio y señala la violación lanzando la excepción: sabe *qué* está prohibido, pero nada de HTTP ni de presentación. El Controller no debería ver excepciones de dominio: solo recibe el ViewModel que le llega a través del puerto. El Interactor es quien orquesta el caso de uso, así que traducir "se violó una regla" en "resultado de error" es parte de su trabajo: atrapa la excepción y llama a `presentError()` del output port, igual que hace con "alumno no encontrado".
+
+Dos matices:
+- Atrapar solo `\DomainException`, no `\Exception`: un error de infraestructura (se cayó la base de datos) no debe disfrazarse de "regla de negocio violada" (422).
+- Si una primera Entity muta su estado y una segunda lanza la excepción, queda un cambio aplicado a medias. En una app real se resuelve con una transacción (`DB::transaction()` en Laravel) o validando todas las reglas antes de mutar.
+
+Caso real: este bug existía en `example.php` (la demo terminaba en `Fatal error`) y lo detectó el smoke run del CI.
+
+**P: ¿Por qué el Interactor *empuja* el resultado al Presenter en vez de devolverlo con `return`?**
+
+Por la **regla de dependencia**: el Interactor vive en el anillo interno y no puede conocer nada del externo (ni JSON, ni HTML, ni HTTP). Por eso define una interfaz de salida (*output port*, ej. `EnrollStudentOutputPort`) **en su propio anillo**, y el Presenter, que vive afuera, la **implementa**. El Interactor empuja `OutputData` a esa interfaz sin saber quién está del otro lado.
+
+La consecuencia: se puede **cambiar el Presenter sin tocar el Interactor**. El mismo caso de uso puede alimentar una respuesta JSON, una vista Blade o una salida de consola. (Ojo: es el Presenter lo que se intercambia, no el Interactor.)
+
+- Clean Architecture ≠ Clean Code: ambos libros son de Robert C. Martin, pero el primero trata de arquitectura (anillos, dependencias) y el segundo de estilo de código.
+- Analogía Laravel: como un Job que despacha un Event en vez de retornar un valor; el Job no sabe quién escucha.
+
+**P: ¿Cómo funciona `$vm = $this->presenter->getViewModel();`? Si el Interactor no retorna nada, ¿cómo llegan sus cambios al Presenter? ¿Es una particularidad de PHP?**
+
+No hay transferencia: el Interactor y el Controller **comparten el mismo objeto Presenter**. En el composition root se crea un solo `JsonEnrollmentPresenter` y se pasa a los dos constructores; ambas propiedades `$this->presenter` apuntan al mismo objeto en memoria. El Interactor llama a `presentError()`/`presentSuccess()`, que escriben `$this->viewModel` dentro de ese objeto; cuando `execute()` termina, el Controller lee `getViewModel()` del mismo objeto y ya encuentra el resultado. El "canal" es el estado compartido de un objeto, no un `return`.
+
+No es particularidad de PHP, es la semántica de objetos de casi todos los lenguajes:
+- **PHP (≥5), Java, Python, TS/JS**: las variables guardan un handle/referencia al objeto; pasarlo copia la referencia, no el objeto.
+- **Go**: los structs se copian por defecto. Funciona solo porque se pasa un puntero (`&ConsolePlaceOrderPresenter{}`); sin el `&`, el Interactor escribiría en una copia.
+- Contraste en PHP: los **arrays** sí se copian al pasarlos (copy-on-write), por eso `viewModel` vive en un objeto. En PHP 4 los objetos también se copiaban (de ahí el `&$obj` en código viejo).
+
+matiz: es **estado mutable compartido** por request. En Laravel, registrar el presenter como `singleton` con Octane (un proceso atiende muchos requests) podría mezclar el `viewModel` de distintos usuarios; se registra con `bind` o `scoped`. Es el mismo problema de estado que sobrevive que se vio al testear el Singleton.
+
 ---
 
 # Clean Architecture — Español
@@ -370,3 +400,33 @@ Un **Gateway** es la interfaz que un Use Case/Interactor define para acceder a u
 - La **implementación concreta** de esa interfaz (usando Eloquent, PDO, JDBC, etc.) vive en el **Anillo 3/4** (Interface Adapters / Frameworks & Drivers).
 
 Es el mismo concepto que un **puerto secundario** en Hexagonal: el núcleo declara qué necesita, y algo de afuera lo satisface. Solo cambia el nombre según la arquitectura.
+
+**P: Si una Entity lanza una `DomainException` (ej. "el alumno ya está inscripto"), ¿quién debería atraparla: la Entity, el Interactor o el Controller?**
+
+El **Interactor**. La Entity solo hace cumplir la regla de dominio y señala la violación lanzando la excepción: sabe *qué* está prohibido, pero nada de HTTP ni de presentación. El Controller no debería ver excepciones de dominio: solo recibe el ViewModel que le llega a través del puerto. El Interactor es quien orquesta el caso de uso, así que traducir "se violó una regla" en "resultado de error" es parte de su trabajo: atrapa la excepción y llama a `presentError()` del output port, igual que hace con "alumno no encontrado".
+
+Dos matices:
+- Atrapar solo `\DomainException`, no `\Exception`: un error de infraestructura (se cayó la base de datos) no debe disfrazarse de "regla de negocio violada" (422).
+- Si una primera Entity muta su estado y una segunda lanza la excepción, queda un cambio aplicado a medias. En una app real se resuelve con una transacción (`DB::transaction()` en Laravel) o validando todas las reglas antes de mutar.
+
+Caso real: este bug existía en `example.php` (la demo terminaba en `Fatal error`) y lo detectó el smoke run del CI.
+
+**P: ¿Por qué el Interactor *empuja* el resultado al Presenter en vez de devolverlo con `return`?**
+
+Por la **regla de dependencia**: el Interactor vive en el anillo interno y no puede conocer nada del externo (ni JSON, ni HTML, ni HTTP). Por eso define una interfaz de salida (*output port*, ej. `EnrollStudentOutputPort`) **en su propio anillo**, y el Presenter, que vive afuera, la **implementa**. El Interactor empuja `OutputData` a esa interfaz sin saber quién está del otro lado.
+
+La consecuencia: se puede **cambiar el Presenter sin tocar el Interactor**. El mismo caso de uso puede alimentar una respuesta JSON, una vista Blade o una salida de consola. (Ojo: es el Presenter lo que se intercambia, no el Interactor.)
+
+- Clean Architecture ≠ Clean Code: ambos libros son de Robert C. Martin, pero el primero trata de arquitectura (anillos, dependencias) y el segundo de estilo de código.
+- Analogía Laravel: como un Job que despacha un Event en vez de retornar un valor; el Job no sabe quién escucha.
+
+**P: ¿Cómo funciona `$vm = $this->presenter->getViewModel();`? Si el Interactor no retorna nada, ¿cómo llegan sus cambios al Presenter? ¿Es una particularidad de PHP?**
+
+No hay transferencia: el Interactor y el Controller **comparten el mismo objeto Presenter**. En el composition root se crea un solo `JsonEnrollmentPresenter` y se pasa a los dos constructores; ambas propiedades `$this->presenter` apuntan al mismo objeto en memoria. El Interactor llama a `presentError()`/`presentSuccess()`, que escriben `$this->viewModel` dentro de ese objeto; cuando `execute()` termina, el Controller lee `getViewModel()` del mismo objeto y ya encuentra el resultado. El "canal" es el estado compartido de un objeto, no un `return`.
+
+No es particularidad de PHP, es la semántica de objetos de casi todos los lenguajes:
+- **PHP (≥5), Java, Python, TS/JS**: las variables guardan un handle/referencia al objeto; pasarlo copia la referencia, no el objeto.
+- **Go**: los structs se copian por defecto. Funciona solo porque se pasa un puntero (`&ConsolePlaceOrderPresenter{}`); sin el `&`, el Interactor escribiría en una copia.
+- Contraste en PHP: los **arrays** sí se copian al pasarlos (copy-on-write), por eso `viewModel` vive en un objeto. En PHP 4 los objetos también se copiaban (de ahí el `&$obj` en código viejo).
+
+matiz: es **estado mutable compartido** por request. En Laravel, registrar el presenter como `singleton` con Octane (un proceso atiende muchos requests) podría mezclar el `viewModel` de distintos usuarios; se registra con `bind` o `scoped`. Es el mismo problema de estado que sobrevive que se vio al testear el Singleton.
