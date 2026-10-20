@@ -1,0 +1,29 @@
+{
+    "name": "wilberpulido/design-patterns",
+    "description": "Learning repository: classic, architectural, cloud and concurrency design patterns with real-world PHP examples.",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "wilberpulido",
+            "email": "pulidowilber@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^8.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "DesignPatterns\\Creational\\Singleton\\": "creational/singleton/src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "DesignPatterns\\Tests\\Creational\\Singleton\\": "creational/singleton/tests/"
+        }
+    }
+}
