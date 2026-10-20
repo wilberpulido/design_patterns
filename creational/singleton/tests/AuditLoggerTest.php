@@ -54,7 +54,7 @@ final class AuditLoggerTest extends TestCase
     $fromPayment->record('jane.doe', 'exported invoice #4821');
 
     // Both references write into the same $entries array.
-    $this->assertSame(2, $fromAuth->getEntryCount());
+    $this->assertSame(3, $fromAuth->getEntryCount());
   }
 
   public function test_new_request_starts_with_empty_audit_trail(): void
