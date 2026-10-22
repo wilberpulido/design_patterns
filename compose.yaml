@@ -1,0 +1,43 @@
+# Local environment: one service per language, so the only requirement is Docker.
+# These are NOT long-running servers: each command starts a container, runs, and is removed
+# (`docker compose run --rm <service> <command>`). The Makefile wraps the usual commands.
+#
+# matiz: versions are pinned in TWO places — here (images) and in .github/workflows/ci.yml
+# (setup-* actions). CI keeps setup-* because it is faster and nothing is deployed as an image;
+# when bumping a version, change both.
+
+# Settings shared by every service (YAML anchor, merged below with `<<: *common`).
+x-common: &common
+  # The repository is mounted, not copied: edits on the host are visible instantly, no rebuild.
+  volumes:
+    - .:/app
+  working_dir: /app
+  # Run as the host user: otherwise files the container creates (vendor/, caches) belong to
+  # root and can't be edited or deleted without sudo. The Makefile exports UID/GID.
+  user: "${UID:-1000}:${GID:-1000}"
+  environment:
+    # That host user does not exist inside the image, so it has no writable home.
+    # Composer, Go and npm keep their caches under $HOME: point it to /tmp.
+    HOME: /tmp
+
+services:
+  php:
+    <<: *common
+    build: docker/php
+
+  python:
+    <<: *common
+    build: docker/python
+
+  # Go and Java need nothing on top of the official images: no Dockerfile.
+  go:
+    <<: *common
+    image: golang:1.26
+
+  java:
+    <<: *common
+    image: eclipse-temurin:21-jdk
+
+  typescript:
+    <<: *common
+    build: docker/typescript

@@ -35,7 +35,27 @@ The remaining folders are placeholders for patterns still to come.
 └── notes.md      # problem, solution, when (not) to use, Q&A
 ```
 
-## Running the examples
+## Quick start with Docker
+
+The only requirement is Docker (with Compose v2): `compose.yaml` has one service per language,
+pinned to the same versions as CI. The `Makefile` wraps the usual commands:
+
+```bash
+make build      # build/pull the 5 images (first time only)
+make install    # composer install
+make ci         # lint + tests + every example, the same checks CI runs
+make example P=behavioral/strategy L=python   # one example (L: php, python, go, java, typescript, js)
+make help       # list every target (test, lint, format, examples, shell-<language>)
+```
+
+Any other command runs inside a language container, from the repository root:
+
+```bash
+docker compose run --rm php vendor/bin/phpunit creational/singleton/tests
+make shell-go   # interactive shell in the Go container
+```
+
+## Running the examples without Docker
 
 Each example runs from its own folder:
 
