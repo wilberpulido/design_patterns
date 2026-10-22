@@ -85,7 +85,7 @@ func (r RetryExecutor) Execute(operation func() (any, error)) (any, error) {
 // ─── DB Connector ─────────────────────────────────────────────────────────────
 
 type DBConnector struct {
-	host             string
+	host              string
 	remainingFailures int
 }
 
@@ -114,7 +114,8 @@ func (db *DBConnector) ConnectBadCredentials(user, password string) (string, err
 // ─── Entry point ──────────────────────────────────────────────────────────────
 
 func main() {
-	fmt.Println("=== Database Connection Pool — Retry Pattern ===\n")
+	fmt.Println("=== Database Connection Pool — Retry Pattern ===")
+	fmt.Println()
 
 	policy := RetryPolicy{
 		MaxAttempts:       3,

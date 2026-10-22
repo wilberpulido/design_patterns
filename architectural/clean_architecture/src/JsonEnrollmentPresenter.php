@@ -19,19 +19,22 @@ class JsonEnrollmentPresenter implements EnrollStudentOutputPort
         // matiz: the presenter converts OutputData into the format the delivery mechanism needs.
         // A different presenter could format the same OutputData as an HTML confirmation page.
         $this->viewModel = [
-            'status'        => 'enrolled',
-            'student'       => $output->studentName,
-            'course'        => $output->courseTitle,
-            'seats_taken'   => "{$output->enrollmentCount}/{$output->capacity}",
+            'status' => 'enrolled',
+            'student' => $output->studentName,
+            'course' => $output->courseTitle,
+            'seats_taken' => "{$output->enrollmentCount}/{$output->capacity}",
         ];
-        echo "[JsonEnrollmentPresenter] Shaped success ViewModel: " . json_encode($this->viewModel) . "\n";
+        echo '[JsonEnrollmentPresenter] Shaped success ViewModel: '.json_encode($this->viewModel)."\n";
     }
 
     public function presentError(string $message): void
     {
         $this->viewModel = ['error' => $message];
-        echo "[JsonEnrollmentPresenter] Shaped error ViewModel: " . json_encode($this->viewModel) . "\n";
+        echo '[JsonEnrollmentPresenter] Shaped error ViewModel: '.json_encode($this->viewModel)."\n";
     }
 
-    public function getViewModel(): ?array { return $this->viewModel; }
+    public function getViewModel(): ?array
+    {
+        return $this->viewModel;
+    }
 }

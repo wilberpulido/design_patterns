@@ -9,8 +9,8 @@ namespace DesignPatterns\Cloud\Retry;
 class RetryPolicy
 {
     public function __construct(
-        public readonly int   $maxAttempts       = 3,
-        public readonly int   $baseDelayMs       = 100,
+        public readonly int $maxAttempts = 3,
+        public readonly int $baseDelayMs = 100,
         public readonly float $backoffMultiplier = 2.0
     ) {}
 

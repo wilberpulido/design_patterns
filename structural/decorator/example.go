@@ -106,7 +106,8 @@ func (d *CachingDecorator) Get(url string) (string, error) {
 // The compiler enforces the contract at the wrapping point, not at a class hierarchy.
 
 func main() {
-	fmt.Println("=== Decorator Pattern Demo — HTTP Client with Retry & Cache (Go) ===\n")
+	fmt.Println("=== Decorator Pattern Demo — HTTP Client with Retry & Cache (Go) ===")
+	fmt.Println()
 
 	core := &RealHttpClient{}
 

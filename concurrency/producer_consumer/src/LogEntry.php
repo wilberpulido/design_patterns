@@ -15,6 +15,6 @@ class LogEntry
         public readonly string $message,
         public readonly string $source
     ) {
-        $this->timestamp = date('H:i:s.') . str_pad((string)((int)(microtime(true) * 1000) % 1000), 3, '0', STR_PAD_LEFT);
+        $this->timestamp = date('H:i:s.').str_pad((string) ((int) (microtime(true) * 1000) % 1000), 3, '0', STR_PAD_LEFT);
     }
 }

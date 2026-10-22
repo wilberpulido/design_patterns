@@ -10,6 +10,7 @@ namespace DesignPatterns\Behavioral\Observer;
 class OrderService
 {
     private array $observers = [];
+
     private array $placedOrders = [];
 
     public function attach(OrderObserver $observer): void
@@ -28,7 +29,7 @@ class OrderService
         // In PHP, === on objects checks if they are the same instance.
         $this->observers = array_filter(
             $this->observers,
-            fn($o) => $o !== $observer
+            fn ($o) => $o !== $observer
         );
         $className = (new \ReflectionClass($observer))->getShortName();
         echo "[OrderService] Observer removed: {$className}\n";
@@ -38,7 +39,7 @@ class OrderService
     // The subject broadcasts the event — it doesn't care who listens.
     private function notify(array $order): void
     {
-        echo "[OrderService] Notifying " . count($this->observers) . " observer(s)...\n";
+        echo '[OrderService] Notifying '.count($this->observers)." observer(s)...\n";
         foreach ($this->observers as $observer) {
             $observer->onOrderPlaced($order);
         }
@@ -47,10 +48,10 @@ class OrderService
     public function placeOrder(string $product, int $qty, float $price): void
     {
         $order = [
-            'id'      => uniqid('ORD-'),
+            'id' => uniqid('ORD-'),
             'product' => $product,
-            'qty'     => $qty,
-            'total'   => $qty * $price,
+            'qty' => $qty,
+            'total' => $qty * $price,
         ];
 
         $this->placedOrders[] = $order;

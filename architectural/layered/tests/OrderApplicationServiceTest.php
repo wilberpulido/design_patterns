@@ -19,23 +19,41 @@ use PHPUnit\Framework\TestCase;
 final class OrderApplicationServiceTest extends TestCase
 {
     private object $orders;
+
     private object $payments;
 
     // The application layer depends on interfaces declared for the infrastructure
     // layer, so tests replace MySQL/Stripe/Warehouse with in-memory fakes.
     private function service(bool $inStock = true): OrderApplicationService
     {
-        $this->orders = new class implements OrderRepository {
+        $this->orders = new class implements OrderRepository
+        {
             public array $saved = [];
-            public function save(Order $order): void { $this->saved[] = $order; }
+
+            public function save(Order $order): void
+            {
+                $this->saved[] = $order;
+            }
         };
-        $this->payments = new class implements PaymentGateway {
+        $this->payments = new class implements PaymentGateway
+        {
             public array $charged = [];
-            public function charge(string $customerId, Money $amount): string { $this->charged[] = $amount->amount; return 'txn_fake'; }
+
+            public function charge(string $customerId, Money $amount): string
+            {
+                $this->charged[] = $amount->amount;
+
+                return 'txn_fake';
+            }
         };
-        $stock = new class($inStock) implements StockService {
+        $stock = new class($inStock) implements StockService
+        {
             public function __construct(private bool $available) {}
-            public function isAvailable(string $productId, int $quantity): bool { return $this->available; }
+
+            public function isAvailable(string $productId, int $quantity): bool
+            {
+                return $this->available;
+            }
         };
 
         return new OrderApplicationService($this->orders, $this->payments, $stock);

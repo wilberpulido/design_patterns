@@ -19,7 +19,7 @@ class EnrollStudentOutput
     public function __construct(
         public readonly string $studentName,
         public readonly string $courseTitle,
-        public readonly int    $enrollmentCount,
-        public readonly int    $capacity
+        public readonly int $enrollmentCount,
+        public readonly int $capacity
     ) {}
 }

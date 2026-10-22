@@ -36,9 +36,9 @@ class RideMatchingService implements RequestRidePort, StartRidePort
         $this->rides->save($ride);
 
         return [
-            'ride_id'  => $ride->getId(),
-            'status'   => $ride->getStatus(),
-            'driver'   => $ride->getDriverId(),
+            'ride_id' => $ride->getId(),
+            'status' => $ride->getStatus(),
+            'driver' => $ride->getDriverId(),
         ];
     }
 

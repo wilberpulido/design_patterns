@@ -36,7 +36,7 @@ declare(strict_types=1);
 //   src/ContentCreatorDashboard.php Client — only knows the facade
 // Executable guarantees of the pattern: tests/VideoPublisherTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Structural\Facade\CdnUploader;
 use DesignPatterns\Structural\Facade\ContentCreatorDashboard;
@@ -49,11 +49,11 @@ use DesignPatterns\Structural\Facade\VideoTranscoder;
 // Bootstrap
 
 $publisher = new VideoPublisher(
-    new VideoTranscoder(),
-    new ThumbnailGenerator(),
-    new CdnUploader(),
-    new VideoMetadataRepository(),
-    new SubscriberNotifier()
+    new VideoTranscoder,
+    new ThumbnailGenerator,
+    new CdnUploader,
+    new VideoMetadataRepository,
+    new SubscriberNotifier
 );
 
 $dashboard = new ContentCreatorDashboard($publisher);

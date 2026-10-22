@@ -13,7 +13,7 @@ class LogWriter
     private int $processed = 0;
 
     public function __construct(
-        private string   $name,
+        private string $name,
         private LogQueue $queue
     ) {}
 
@@ -25,6 +25,7 @@ class LogWriter
         }
         $this->processed++;
         echo "[{$this->name}] Writing   [{$entry->level}] from {$entry->source}: \"{$entry->message}\"\n";
+
         return true;
     }
 
@@ -33,5 +34,8 @@ class LogWriter
         while ($this->consumeOne());
     }
 
-    public function getProcessed(): int { return $this->processed; }
+    public function getProcessed(): int
+    {
+        return $this->processed;
+    }
 }

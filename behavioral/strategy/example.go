@@ -93,9 +93,9 @@ func (b *BackupService) Backup(filename, fileType string, sizeKb int) {
 
 func main() {
 	storage := NewFileStorage(&GzipStrategy{})
-	backup  := &BackupService{storage: storage}
+	backup := &BackupService{storage: storage}
 
-	backup.Backup("database_dump.sql", "sql",    45000)
-	backup.Backup("server_logs.tar",   "tar",    12000)
-	backup.Backup("profile_photo.jpg", "jpg",     2400)
+	backup.Backup("database_dump.sql", "sql", 45000)
+	backup.Backup("server_logs.tar", "tar", 12000)
+	backup.Backup("profile_photo.jpg", "jpg", 2400)
 }

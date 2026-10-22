@@ -145,20 +145,21 @@ func (c *MenuController) SetAvailability(id int, available bool) {
 // ─── Entry point ──────────────────────────────────────────────────────────────
 
 func main() {
-	fmt.Println("=== Restaurant Menu Manager — MVC Pattern ===\n")
+	fmt.Println("=== Restaurant Menu Manager — MVC Pattern ===")
+	fmt.Println()
 
 	menu := NewMenu()
 	view := &MenuView{}
 	ctrl := NewMenuController(menu, view)
 
-	menu.Add("Caesar Salad",        8.50, Starter)
-	menu.Add("Bruschetta",          7.00, Starter)
-	menu.Add("Grilled Salmon",     24.00, MainCourse)
-	menu.Add("Ribeye Steak",       38.00, MainCourse)
-	menu.Add("Mushroom Risotto",   18.00, MainCourse)
-	menu.Add("Tiramisu",            9.00, Dessert)
-	menu.Add("Espresso",            3.50, Beverage)
-	menu.Add("House Wine (glass)",  7.00, Beverage)
+	menu.Add("Caesar Salad", 8.50, Starter)
+	menu.Add("Bruschetta", 7.00, Starter)
+	menu.Add("Grilled Salmon", 24.00, MainCourse)
+	menu.Add("Ribeye Steak", 38.00, MainCourse)
+	menu.Add("Mushroom Risotto", 18.00, MainCourse)
+	menu.Add("Tiramisu", 9.00, Dessert)
+	menu.Add("Espresso", 3.50, Beverage)
+	menu.Add("House Wine (glass)", 7.00, Beverage)
 
 	ctrl.ShowFullMenu()
 	ctrl.ShowCategory(MainCourse)

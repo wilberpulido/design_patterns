@@ -31,11 +31,11 @@ declare(strict_types=1);
 //   RING 4 FRAMEWORKS    the composition root at the bottom of this file
 // Executable guarantees of the pattern: tests/EnrollStudentInteractorTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Architectural\CleanArchitecture\Course;
-use DesignPatterns\Architectural\CleanArchitecture\EnrollStudentInteractor;
 use DesignPatterns\Architectural\CleanArchitecture\EnrollmentController;
+use DesignPatterns\Architectural\CleanArchitecture\EnrollStudentInteractor;
 use DesignPatterns\Architectural\CleanArchitecture\InMemoryCourseGateway;
 use DesignPatterns\Architectural\CleanArchitecture\InMemoryStudentGateway;
 use DesignPatterns\Architectural\CleanArchitecture\JsonEnrollmentPresenter;
@@ -48,16 +48,16 @@ use DesignPatterns\Architectural\CleanArchitecture\Student;
 
 echo "=== Clean Architecture — E-Learning Enrollment Platform (PHP) ===\n\n";
 
-$studentGateway = new InMemoryStudentGateway();
-$courseGateway  = new InMemoryCourseGateway();
+$studentGateway = new InMemoryStudentGateway;
+$courseGateway = new InMemoryCourseGateway;
 
 $studentGateway->seed(new Student('s-001', 'Alice Martínez', 'alice@example.com'));
 $studentGateway->seed(new Student('s-002', 'Bob Chen', 'bob@example.com'));
 $courseGateway->seed(new Course('c-101', 'Python for Data Science', 2));
 
-$presenter   = new JsonEnrollmentPresenter();
-$interactor  = new EnrollStudentInteractor($studentGateway, $courseGateway, $presenter);
-$controller  = new EnrollmentController($interactor, $presenter);
+$presenter = new JsonEnrollmentPresenter;
+$interactor = new EnrollStudentInteractor($studentGateway, $courseGateway, $presenter);
+$controller = new EnrollmentController($interactor, $presenter);
 
 echo "--- Alice enrolls in Python for Data Science ---\n";
 $controller->postEnrollment(['student_id' => 's-001', 'course_id' => 'c-101']);

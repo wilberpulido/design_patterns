@@ -55,11 +55,18 @@ class example {
 
 // ─── Exceptions ───────────────────────────────────────────────────────────────
 
+// matiz: exceptions are Serializable (Throwable implements it), so javac -Xlint warns when
+// serialVersionUID is missing. Declaring it pins the serialized form's version explicitly
+// instead of letting the JVM derive one that changes with any edit to the class.
 class TransientException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+
     public TransientException(String msg) { super(msg); }
 }
 
 class PermanentException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+
     public PermanentException(String msg) { super(msg); }
 }
 

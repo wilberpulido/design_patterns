@@ -21,7 +21,7 @@ class VideoPublisher
         echo "\n[VideoPublisher] Starting publish pipeline for \"{$title}\"...\n";
 
         $encodedFiles = $this->transcoder->transcode($rawFilePath, [360, 720, 1080]);
-        $thumbnail    = $this->thumbnailGenerator->generate($rawFilePath, 5);
+        $thumbnail = $this->thumbnailGenerator->generate($rawFilePath, 5);
 
         $cdnUrls = [];
         foreach ($encodedFiles as $res => $file) {
@@ -30,15 +30,16 @@ class VideoPublisher
         $thumbnailUrl = $this->cdn->upload($thumbnail, "thumbnails/{$channelId}/thumb.jpg");
 
         $videoId = $this->repository->save([
-            'title'         => $title,
-            'channel_id'    => $channelId,
-            'cdn_urls'      => $cdnUrls,
+            'title' => $title,
+            'channel_id' => $channelId,
+            'cdn_urls' => $cdnUrls,
             'thumbnail_url' => $thumbnailUrl,
         ]);
 
         $this->notifier->notify($channelId, $title, $cdnUrls[720]);
 
         echo "[VideoPublisher] Pipeline complete. Video ID: {$videoId}\n";
+
         return $videoId;
     }
 
@@ -53,6 +54,7 @@ class VideoPublisher
         $this->transcoder->transcode($rawFilePath, [720]);
         $videoId = $this->repository->save(['title' => $title, 'channel_id' => $channelId, 'status' => 'draft']);
         echo "[VideoPublisher] Draft saved with ID: {$videoId}. Awaiting creator review.\n";
+
         return $videoId;
     }
 }

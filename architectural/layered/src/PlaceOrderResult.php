@@ -12,7 +12,7 @@ class PlaceOrderResult
 {
     public function __construct(
         public readonly string $orderId,
-        public readonly float  $total,
+        public readonly float $total,
         public readonly string $transactionId
     ) {}
 }

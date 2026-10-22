@@ -15,7 +15,10 @@ namespace DesignPatterns\Architectural\Hexagonal;
 interface RideRepositoryPort
 {
     public function nextId(): string;
+
     public function save(Ride $ride): void;
+
     public function findById(string $id): ?Ride;
+
     public function findAvailableDriverId(): ?string;
 }

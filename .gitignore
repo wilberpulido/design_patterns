@@ -6,3 +6,6 @@ dist/
 
 /vendor/
 .phpunit.cache/
+
+# ruff (Python linter) cache
+.ruff_cache/

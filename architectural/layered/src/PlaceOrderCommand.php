@@ -12,6 +12,6 @@ class PlaceOrderCommand
 {
     public function __construct(
         public readonly string $customerId,
-        public readonly array  $items  // [['productId', 'name', 'quantity', 'unitPrice'], ...]
+        public readonly array $items  // [['productId', 'name', 'quantity', 'unitPrice'], ...]
     ) {}
 }

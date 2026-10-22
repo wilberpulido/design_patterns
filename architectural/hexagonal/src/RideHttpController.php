@@ -15,14 +15,14 @@ class RideHttpController
     // This controller can be tested by injecting a stub that implements RequestRidePort.
     public function __construct(
         private RequestRidePort $requestRide,
-        private StartRidePort   $startRide
+        private StartRidePort $startRide
     ) {}
 
     public function postRide(array $body): void
     {
         echo "[RideHttpController] POST /rides  passenger='{$body['passenger_id']}'\n";
         $result = $this->requestRide->request($body['passenger_id']);
-        echo "[RideHttpController] 201 Created → " . json_encode($result) . "\n";
+        echo '[RideHttpController] 201 Created → '.json_encode($result)."\n";
     }
 
     public function patchStart(string $rideId): void

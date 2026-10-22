@@ -8,10 +8,10 @@ namespace DesignPatterns\Architectural\Repository;
 class Product
 {
     public function __construct(
-        public readonly int    $id,
+        public readonly int $id,
         public readonly string $name,
         public readonly string $category,
-        public readonly float  $price,
-        public readonly bool   $active
+        public readonly float $price,
+        public readonly bool $active
     ) {}
 }

@@ -14,6 +14,7 @@ class VideoTranscoder
             echo "[VideoTranscoder] Transcoding to {$res}p...\n";
             $outputs[$res] = "/tmp/encoded_{$res}p.mp4";
         }
+
         return $outputs;
     }
 }

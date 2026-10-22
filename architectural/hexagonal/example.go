@@ -249,7 +249,8 @@ func (h *SmartHomeHttpHandler) PutDeviceStatus(deviceID, action string, value in
 // ─────────────────────────────────────────────
 
 func main() {
-	fmt.Println("=== Hexagonal Architecture — Smart Home Automation (Go) ===\n")
+	fmt.Println("=== Hexagonal Architecture — Smart Home Automation (Go) ===")
+	fmt.Println()
 
 	repo := NewInMemoryDeviceRepository(
 		&Device{ID: "living-light-1", Name: "Living Room Light", Type: "light", Status: StatusOff},

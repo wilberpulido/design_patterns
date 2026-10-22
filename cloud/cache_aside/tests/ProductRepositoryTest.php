@@ -19,12 +19,19 @@ final class ProductRepositoryTest extends TestCase
     private function repository(): ProductRepository
     {
         // Spy database: counts how many reads actually reach the "slow" storage.
-        $this->db = new class extends ProductDatabase {
+        $this->db = new class extends ProductDatabase
+        {
             public int $reads = 0;
-            public function find(int $id): ?array { $this->reads++; return parent::find($id); }
+
+            public function find(int $id): ?array
+            {
+                $this->reads++;
+
+                return parent::find($id);
+            }
         };
 
-        return new ProductRepository(new InMemoryCache(), $this->db);
+        return new ProductRepository(new InMemoryCache, $this->db);
     }
 
     public function test_second_read_is_served_from_cache(): void

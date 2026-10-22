@@ -30,7 +30,7 @@ func producer(jobs chan<- ScrapeJob, urls []string) {
 		job := ScrapeJob{URL: url, Priority: i + 1}
 		fmt.Printf("[Producer] Queuing (#%d): %s  — buffer: %d/%d\n",
 			job.Priority, job.URL, len(jobs), cap(jobs))
-		jobs <- job         // blocks if channel buffer is full (backpressure)
+		jobs <- job // blocks if channel buffer is full (backpressure)
 		time.Sleep(40 * time.Millisecond)
 	}
 	// matiz: closing the channel — not a poison pill — is the idiomatic Go approach.
@@ -59,7 +59,8 @@ func worker(id int, jobs <-chan ScrapeJob, wg *sync.WaitGroup) {
 // ─── Entry point ──────────────────────────────────────────────────────────────
 
 func main() {
-	fmt.Println("=== Web Scraper — Producer-Consumer Pattern ===\n")
+	fmt.Println("=== Web Scraper — Producer-Consumer Pattern ===")
+	fmt.Println()
 
 	urls := []string{
 		"https://news.ycombinator.com",

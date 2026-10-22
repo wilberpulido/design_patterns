@@ -11,11 +11,16 @@ namespace DesignPatterns\Architectural\Hexagonal;
 
 class InMemoryRideRepository implements RideRepositoryPort
 {
-    private array $store     = [];
-    private array $drivers   = ['driver-001', 'driver-002', 'driver-003'];
-    private int   $seq       = 1;
+    private array $store = [];
 
-    public function nextId(): string { return 'ride-' . $this->seq++; }
+    private array $drivers = ['driver-001', 'driver-002', 'driver-003'];
+
+    private int $seq = 1;
+
+    public function nextId(): string
+    {
+        return 'ride-'.$this->seq++;
+    }
 
     public function save(Ride $ride): void
     {

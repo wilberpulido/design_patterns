@@ -89,11 +89,11 @@ func (p *DeploymentPipeline) emit(stage, status string, duration time.Duration) 
 }
 
 // Public methods simulate the pipeline lifecycle.
-func (p *DeploymentPipeline) StartBuild()    { p.emit("build", "started", 0) }
-func (p *DeploymentPipeline) BuildPassed()   { p.emit("build", "passed", 42*time.Second) }
-func (p *DeploymentPipeline) TestsPassed()   { p.emit("test", "passed", 118*time.Second) }
-func (p *DeploymentPipeline) DeployFailed()  { p.emit("deploy", "failed", 15*time.Second) }
-func (p *DeploymentPipeline) DeployPassed()  { p.emit("deploy", "passed", 30*time.Second) }
+func (p *DeploymentPipeline) StartBuild()   { p.emit("build", "started", 0) }
+func (p *DeploymentPipeline) BuildPassed()  { p.emit("build", "passed", 42*time.Second) }
+func (p *DeploymentPipeline) TestsPassed()  { p.emit("test", "passed", 118*time.Second) }
+func (p *DeploymentPipeline) DeployFailed() { p.emit("deploy", "failed", 15*time.Second) }
+func (p *DeploymentPipeline) DeployPassed() { p.emit("deploy", "passed", 30*time.Second) }
 
 // ─── Concrete Observers ───────────────────────────────────────────────────────
 
@@ -177,8 +177,8 @@ func main() {
 
 	pipeline := NewDeploymentPipeline("api-service")
 
-	slack    := &SlackNotifier{Channel: "deployments"}
-	metrics  := NewMetricsCollector()
+	slack := &SlackNotifier{Channel: "deployments"}
+	metrics := NewMetricsCollector()
 	rollback := &RollbackController{lastStableVersion: "v1.4.2"}
 
 	pipeline.Subscribe(slack)

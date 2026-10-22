@@ -18,11 +18,14 @@ final class PayPalAdapterTest extends TestCase
     {
         // The adaptee only understands integer cents and uppercase currency codes.
         // A spy subclass records what the adapter actually sends to it.
-        $legacy = new class extends LegacyPayPalClient {
+        $legacy = new class extends LegacyPayPalClient
+        {
             public array $received = [];
+
             public function submitPaymentRequest(int $amountInCents, string $currencyCode, string $cardToken, string $description): string
             {
                 $this->received = [$amountInCents, $currencyCode];
+
                 return 'PPL-TXN-FAKE';
             }
         };
@@ -39,7 +42,7 @@ final class PayPalAdapterTest extends TestCase
         $this->expectOutputRegex('/Cancelling transaction PPL-TXN-/');
 
         // Client code only sees the target interface, never the legacy class.
-        $gateway = new PayPalAdapter(new LegacyPayPalClient());
+        $gateway = new PayPalAdapter(new LegacyPayPalClient);
         $this->assertInstanceOf(PaymentGateway::class, $gateway);
 
         $charge = $gateway->charge(10.0, 'USD', 'tok_test');

@@ -89,7 +89,9 @@ class ProfileRepository:
             # waited for the lock. This turns the stampede back into a single hit.
             cached = self._cache.get(key)
             if cached is not None:
-                print(f"[Repository] Coalesced — got #{user_id} populated by another request.")
+                print(
+                    f"[Repository] Coalesced — got #{user_id} populated by another request."
+                )
                 return cached
 
             profile = self._db.find(user_id)
@@ -116,7 +118,9 @@ def main() -> None:
     for t in threads:
         t.join()
     # Thanks to request coalescing, 5 simultaneous misses caused only ONE DB query.
-    print(f"\nDB queries so far: {db.query_count} (5 concurrent misses collapsed into 1)\n")
+    print(
+        f"\nDB queries so far: {db.query_count} (5 concurrent misses collapsed into 1)\n"
+    )
 
     print("--- Wait for TTL to expire, then read again ---")
     time.sleep(ProfileRepository.TTL + 0.1)

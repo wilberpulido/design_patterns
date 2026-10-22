@@ -10,6 +10,7 @@ class CdnUploader
     public function upload(string $filePath, string $destinationKey): string
     {
         echo "[CdnUploader] Uploading {$filePath} → {$destinationKey}...\n";
+
         return "https://cdn.example.com/{$destinationKey}";
     }
 }

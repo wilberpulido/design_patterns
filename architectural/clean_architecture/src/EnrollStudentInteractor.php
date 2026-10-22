@@ -22,8 +22,8 @@ class EnrollStudentInteractor implements EnrollStudentInputPort
     // The same interactor can feed a JSON API, an HTML page, or an event queue —
     // just swap the presenter; the business logic is untouched.
     public function __construct(
-        private StudentGateway          $students,
-        private CourseGateway           $courses,
+        private StudentGateway $students,
+        private CourseGateway $courses,
         private EnrollStudentOutputPort $presenter
     ) {}
 
@@ -34,12 +34,14 @@ class EnrollStudentInteractor implements EnrollStudentInputPort
         $student = $this->students->findById($input->studentId);
         if ($student === null) {
             $this->presenter->presentError("Student '{$input->studentId}' not found.");
+
             return;
         }
 
         $course = $this->courses->findById($input->courseId);
         if ($course === null) {
             $this->presenter->presentError("Course '{$input->courseId}' not found.");
+
             return;
         }
 
@@ -57,6 +59,7 @@ class EnrollStudentInteractor implements EnrollStudentInputPort
             // Laravel) or validate every rule before mutating any entity.
             echo "[EnrollStudentInteractor] Business rule violated — routing it to the presenter\n";
             $this->presenter->presentError($e->getMessage());
+
             return;
         }
 
@@ -67,10 +70,10 @@ class EnrollStudentInteractor implements EnrollStudentInputPort
 
         // Use case PUSHES to the presenter instead of returning — the output boundary is explicit
         $this->presenter->presentSuccess(new EnrollStudentOutput(
-            studentName:     $student->getName(),
-            courseTitle:     $course->getTitle(),
+            studentName: $student->getName(),
+            courseTitle: $course->getTitle(),
             enrollmentCount: $course->getEnrollmentCount(),
-            capacity:        $course->getCapacity(),
+            capacity: $course->getCapacity(),
         ));
     }
 }

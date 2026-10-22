@@ -13,7 +13,7 @@ namespace DesignPatterns\Architectural\CleanArchitecture;
 class EnrollmentController
 {
     public function __construct(
-        private EnrollStudentInputPort  $useCase,
+        private EnrollStudentInputPort $useCase,
         private JsonEnrollmentPresenter $presenter
     ) {}
 
@@ -28,7 +28,7 @@ class EnrollmentController
         // Controller reads the ViewModel from the presenter after the use case runs
         $vm = $this->presenter->getViewModel();
         $httpStatus = isset($vm['error']) ? 422 : 201;
-        echo "[EnrollmentController] HTTP {$httpStatus} → " . json_encode($vm) . "\n";
+        echo "[EnrollmentController] HTTP {$httpStatus} → ".json_encode($vm)."\n";
 
         return $vm ?? [];
     }

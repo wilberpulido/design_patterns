@@ -29,11 +29,11 @@ declare(strict_types=1);
 //   (below) processOrder()         Client — only knows PaymentGateway
 // Executable guarantees of the pattern: tests/PayPalAdapterTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Structural\Adapter\LegacyPayPalClient;
-use DesignPatterns\Structural\Adapter\PayPalAdapter;
 use DesignPatterns\Structural\Adapter\PaymentGateway;
+use DesignPatterns\Structural\Adapter\PayPalAdapter;
 
 // Client code — only knows about PaymentGateway.
 // It has zero knowledge of PayPal, cents conversion, or callback formats.
@@ -49,13 +49,13 @@ function processOrder(PaymentGateway $gateway, float $amount, string $currency, 
 
         echo "\n[OrderService] Customer requested refund for {$result['transaction_id']}...\n";
         $refunded = $gateway->refund($result['transaction_id']);
-        echo "[OrderService] Refund " . ($refunded ? "successful" : "failed") . ".\n";
+        echo '[OrderService] Refund '.($refunded ? 'successful' : 'failed').".\n";
     }
 }
 
 // Wiring: inject the adapter wherever a PaymentGateway is expected.
 // To switch to Stripe tomorrow, we only need a StripeAdapter — zero changes in OrderService.
-$legacyPayPal = new LegacyPayPalClient();
+$legacyPayPal = new LegacyPayPalClient;
 $gateway = new PayPalAdapter($legacyPayPal);
 
 processOrder($gateway, 99.99, 'USD', 'card_tok_4242424242');

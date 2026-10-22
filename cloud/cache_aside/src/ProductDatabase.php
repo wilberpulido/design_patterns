@@ -20,6 +20,7 @@ class ProductDatabase
     {
         echo "[Database] SELECT product #{$id} (slow query ~200ms)...\n";
         usleep(200_000); // simulate real query latency
+
         return $this->rows[$id] ?? null;
     }
 

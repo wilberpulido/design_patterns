@@ -11,6 +11,7 @@ class VideoMetadataRepository
     {
         $videoId = uniqid('vid_');
         echo "[VideoMetadataRepository] Saving metadata for \"{$metadata['title']}\" → ID: {$videoId}\n";
+
         return $videoId;
     }
 }

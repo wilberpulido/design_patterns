@@ -30,7 +30,7 @@ final class LogQueueTest extends TestCase
     public function test_consumer_drains_entries_in_fifo_order(): void
     {
         $this->expectOutputRegex('/\[/');
-        $queue = new LogQueue();
+        $queue = new LogQueue;
         $producer = new AppLogger('api', $queue);
         $consumer = new LogWriter('writer-1', $queue);
 

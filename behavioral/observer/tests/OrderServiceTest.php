@@ -16,16 +16,21 @@ final class OrderServiceTest extends TestCase
     {
         // Any class that implements the interface can subscribe — the subject never
         // knew this one existed.
-        return new class implements OrderObserver {
+        return new class implements OrderObserver
+        {
             public array $received = [];
-            public function onOrderPlaced(array $order): void { $this->received[] = $order; }
+
+            public function onOrderPlaced(array $order): void
+            {
+                $this->received[] = $order;
+            }
         };
     }
 
     public function test_every_attached_observer_is_notified(): void
     {
         $this->expectOutputRegex('/Observer registered/');
-        $service = new OrderService();
+        $service = new OrderService;
         $first = $this->spy();
         $second = $this->spy();
         $service->attach($first);
@@ -40,7 +45,7 @@ final class OrderServiceTest extends TestCase
     public function test_detached_observer_stops_receiving_events(): void
     {
         $this->expectOutputRegex('/Observer removed/');
-        $service = new OrderService();
+        $service = new OrderService;
         $kept = $this->spy();
         $removed = $this->spy();
         $service->attach($kept);

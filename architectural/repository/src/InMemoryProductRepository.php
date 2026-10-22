@@ -14,21 +14,23 @@ class InMemoryProductRepository implements ProductRepository
     public function findById(int $id): ?Product
     {
         echo "[InMemoryProductRepository] Looking up product #{$id} in memory...\n";
+
         return $this->products[$id] ?? null;
     }
 
     public function findByCategory(string $category): array
     {
         echo "[InMemoryProductRepository] Filtering products by category '{$category}' in memory...\n";
+
         return array_values(array_filter(
             $this->products,
-            fn(Product $p) => $p->category === $category && $p->active
+            fn (Product $p) => $p->category === $category && $p->active
         ));
     }
 
     public function findAllActive(): array
     {
-        return array_values(array_filter($this->products, fn(Product $p) => $p->active));
+        return array_values(array_filter($this->products, fn (Product $p) => $p->active));
     }
 
     public function save(Product $product): void

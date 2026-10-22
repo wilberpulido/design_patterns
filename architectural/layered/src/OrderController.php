@@ -20,7 +20,7 @@ class OrderController
         // Presentation only: map HTTP input → application command
         $result = $this->service->placeOrder(new PlaceOrderCommand(
             customerId: $httpRequest['customer_id'],
-            items:      $httpRequest['items']
+            items: $httpRequest['items']
         ));
 
         // matiz: the controller formats the response — it never decides business outcomes.

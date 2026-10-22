@@ -9,7 +9,7 @@ set -euo pipefail
 file="$1"
 out="$(mktemp -d)"
 
-javac -d "$out" "$file"
+javac -Xlint:all -Werror -d "$out" "$file"
 
 # Last top-level class declared before the line with main().
 main_class="$(awk '

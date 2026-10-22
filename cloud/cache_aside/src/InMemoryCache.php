@@ -16,8 +16,9 @@ class InMemoryCache
 
     public function get(string $key): mixed
     {
-        if (!isset($this->store[$key])) {
+        if (! isset($this->store[$key])) {
             echo "[Cache] MISS for '{$key}' (not present)\n";
+
             return null;
         }
 
@@ -26,10 +27,12 @@ class InMemoryCache
         if (microtime(true) > $this->store[$key]['expiresAt']) {
             echo "[Cache] MISS for '{$key}' (expired)\n";
             unset($this->store[$key]);
+
             return null;
         }
 
         echo "[Cache] HIT for '{$key}'\n";
+
         return $this->store[$key]['value'];
     }
 
@@ -37,7 +40,7 @@ class InMemoryCache
     {
         echo "[Cache] SET '{$key}' (ttl={$ttlSeconds}s)\n";
         $this->store[$key] = [
-            'value'     => $value,
+            'value' => $value,
             'expiresAt' => microtime(true) + $ttlSeconds,
         ];
     }

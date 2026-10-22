@@ -5,8 +5,8 @@ Uploaded images are queued for processing (resize, watermark, compress).
 Multiple worker threads consume the queue concurrently.
 """
 
-import threading
 import queue
+import threading
 import time
 
 # Sentinel value — placed in the queue to signal a worker to shut down.
@@ -15,45 +15,50 @@ STOP = object()
 
 # ─── Data ─────────────────────────────────────────────────────────────────────
 
+
 class ImageTask:
     def __init__(self, filename: str, filters: list[str]):
         self.filename = filename
-        self.filters  = filters
+        self.filters = filters
 
     def __str__(self):
         return f"{self.filename} [{', '.join(self.filters)}]"
+
 
 # ─── Producer ─────────────────────────────────────────────────────────────────
 # The producer runs in its own thread, generating tasks and placing them
 # in the shared queue. It does not know how many workers exist.
 
+
 class UploadHandler(threading.Thread):
     def __init__(self, task_queue: queue.Queue, uploads: list[dict]):
         super().__init__(name="UploadHandler")
-        self._queue   = task_queue
+        self._queue = task_queue
         self._uploads = uploads
 
     def run(self):
         for upload in self._uploads:
             task = ImageTask(upload["filename"], upload["filters"])
             print(f"[UploadHandler] Queuing: {task}  — buffer: {self._queue.qsize()}")
-            self._queue.put(task)   # blocks if queue is full (backpressure)
-            time.sleep(0.05)        # simulate upload rate
+            self._queue.put(task)  # blocks if queue is full (backpressure)
+            time.sleep(0.05)  # simulate upload rate
         print("[UploadHandler] All uploads queued.")
+
 
 # ─── Consumer ─────────────────────────────────────────────────────────────────
 # Each worker runs in its own thread, pulling tasks from the shared queue.
 # Workers shut down gracefully when they receive the STOP sentinel.
 
+
 class ImageWorker(threading.Thread):
     def __init__(self, worker_id: int, task_queue: queue.Queue):
         super().__init__(name=f"Worker-{worker_id}")
-        self._id    = worker_id
+        self._id = worker_id
         self._queue = task_queue
 
     def run(self):
         while True:
-            task = self._queue.get()    # blocks until a task is available
+            task = self._queue.get()  # blocks until a task is available
 
             if task is STOP:
                 print(f"[Worker-{self._id}] Received stop signal. Shutting down.")
@@ -67,6 +72,7 @@ class ImageWorker(threading.Thread):
         print(f"[Worker-{self._id}] Processing: {task}")
         time.sleep(0.12)  # simulate processing time (slower than production)
         print(f"[Worker-{self._id}] Done:       {task.filename}")
+
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
 
@@ -92,7 +98,7 @@ if __name__ == "__main__":
 
     NUM_WORKERS = 3
 
-    workers  = [ImageWorker(i + 1, buffer) for i in range(NUM_WORKERS)]
+    workers = [ImageWorker(i + 1, buffer) for i in range(NUM_WORKERS)]
     producer = UploadHandler(buffer, uploads)
 
     for w in workers:
