@@ -44,23 +44,77 @@ jobs:
         with:
           php-version: "8.4"
           coverage: none
-
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ hashFiles('composer.lock') }}
       # Needed here too: migrated examples load classes through vendor/autoload.php.
       - run: composer install --no-interaction --prefer-dist --no-progress
 
-      # Run every example from its own folder (like a human would) and collect all
-      # failures instead of stopping at the first one, so the log shows the full picture.
+      # The loop lives in a shared script so the 5 language jobs reuse the same logic:
+      # run each example from its own folder and report ALL failures, not just the first.
       - name: Run every example.php
-        run: |
-          failed=0
-          for file in */*/example.php; do
-            echo "::group::$file"
-            if (cd "$(dirname "$file")" && php example.php); then
-              echo "OK: $file"
-            else
-              echo "::error file=$file::$file exited with a non-zero code"
-              failed=1
-            fi
-            echo "::endgroup::"
-          done
-          exit $failed
+        run: bash .github/scripts/run-examples.sh example.php php
+
+  # ─── Other languages: no unit tests, only a smoke run of every example ─────────
+  # Each job installs ITS language on a fresh VM (the runner image has its own
+  # versions; setup-* pins the one this repo was written for) and runs every example.
+  # None of these languages has external dependencies here, so there is nothing to cache.
+
+  python:
+    name: Python examples (smoke run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Run every example.py
+        run: bash .github/scripts/run-examples.sh example.py python
+
+  go:
+    name: Go examples (smoke run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          # setup-go caches modules by default, keyed on go.sum — this repo has no
+          # go.mod/go.sum (each example is a standalone `package main`), so turn it off.
+          cache: false
+      - name: Run every example.go
+        run: bash .github/scripts/run-examples.sh example.go go run
+
+  java:
+    name: Java examples (compile + run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      # run-java.sh compiles with javac and runs the class that declares main():
+      # `java example.java` would run the FIRST class in the file, which fails in
+      # examples where main() lives in a later class.
+      - name: Compile and run every example.java
+        run: bash .github/scripts/run-examples.sh example.java bash "$GITHUB_WORKSPACE/.github/scripts/run-java.sh"
+
+  typescript:
+    name: TypeScript/JS examples (smoke run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      # No package.json in the repo, so the tools are installed globally on the VM.
+      # ts-node type-checks with the root tsconfig.json (strict) before running.
+      - run: npm install --global typescript@5 ts-node@10
+      - name: Run every example.ts
+        run: bash .github/scripts/run-examples.sh example.ts ts-node
+      # matiz: 7 patterns still ship example.js instead of example.ts (pending migration);
+      # running them with node keeps them covered until they are ported.
+      - name: Run every example.js
+        run: bash .github/scripts/run-examples.sh example.js node
