@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Laravel note:
  *
@@ -18,134 +20,19 @@
  *   You still own the invalidation policy — Laravel only gives you the read shortcut.
  */
 
-// ─── Cache store ──────────────────────────────────────────────────────────────
-// Stands in for Redis/Memcached. The point of the pattern is that this store is
-// FAST and VOLATILE: losing it must never lose data, because the database is the
-// source of truth. The cache only holds copies.
+// ─── Pattern map ──────────────────────────────────────────────────────────────
+// This file only runs the demo. Read the classes in src/ in this order:
+//   src/ProductDatabase.php        Source of truth — slow storage
+//   src/InMemoryCache.php          Cache — stand-in for Redis/Memcached, with TTL
+//   src/ProductRepository.php      Cache-aside logic: read → cache, miss → DB + populate;
+//                                  write → DB + invalidate
+// Executable guarantees of the pattern: tests/ProductRepositoryTest.php
 
-class InMemoryCache
-{
-    /** @var array<string, array{value: mixed, expiresAt: float}> */
-    private array $store = [];
+require __DIR__ . '/../../vendor/autoload.php';
 
-    public function get(string $key): mixed
-    {
-        if (!isset($this->store[$key])) {
-            echo "[Cache] MISS for '{$key}' (not present)\n";
-            return null;
-        }
-
-        // matiz: TTL expiration. An entry that is present but expired is treated as a MISS.
-        // This is how the cache self-heals stale data: it bounds how wrong a copy can be.
-        if (microtime(true) > $this->store[$key]['expiresAt']) {
-            echo "[Cache] MISS for '{$key}' (expired)\n";
-            unset($this->store[$key]);
-            return null;
-        }
-
-        echo "[Cache] HIT for '{$key}'\n";
-        return $this->store[$key]['value'];
-    }
-
-    public function set(string $key, mixed $value, int $ttlSeconds): void
-    {
-        echo "[Cache] SET '{$key}' (ttl={$ttlSeconds}s)\n";
-        $this->store[$key] = [
-            'value'     => $value,
-            'expiresAt' => microtime(true) + $ttlSeconds,
-        ];
-    }
-
-    public function forget(string $key): void
-    {
-        echo "[Cache] FORGET '{$key}'\n";
-        unset($this->store[$key]);
-    }
-}
-
-// ─── Source of truth ──────────────────────────────────────────────────────────
-// The slow, authoritative store. Every read here is "expensive" — that cost is
-// exactly what Cache-Aside is trying to avoid paying twice.
-
-class ProductDatabase
-{
-    /** @var array<int, array{id:int, name:string, price:float}> */
-    private array $rows = [
-        1 => ['id' => 1, 'name' => 'Mechanical Keyboard', 'price' => 89.90],
-        2 => ['id' => 2, 'name' => 'Noise-Cancelling Headset', 'price' => 149.00],
-    ];
-
-    public function find(int $id): ?array
-    {
-        echo "[Database] SELECT product #{$id} (slow query ~200ms)...\n";
-        usleep(200_000); // simulate real query latency
-        return $this->rows[$id] ?? null;
-    }
-
-    public function updatePrice(int $id, float $price): void
-    {
-        echo "[Database] UPDATE product #{$id} price = \${$price}\n";
-        $this->rows[$id]['price'] = $price;
-    }
-}
-
-// ─── Repository (the Cache-Aside logic lives here) ────────────────────────────
-// Scenario: an e-commerce product catalog. Products are read on nearly every page
-// view but change rarely, so they are the textbook case for caching.
-//
-// The repository — NOT the cache and NOT the database — owns the aside logic:
-// "look aside" to the cache first, fall back to the DB, and populate the cache.
-
-class ProductRepository
-{
-    private const TTL = 30;
-
-    public function __construct(
-        private InMemoryCache   $cache,
-        private ProductDatabase $db
-    ) {}
-
-    public function getById(int $id): ?array
-    {
-        $key = "product:{$id}";
-
-        // 1) Read path: ask the cache first.
-        $cached = $this->cache->get($key);
-        if ($cached !== null) {
-            echo "[Repository] Served product #{$id} from cache.\n";
-            return $cached;
-        }
-
-        // 2) On a miss, load from the source of truth...
-        $product = $this->db->find($id);
-        if ($product === null) {
-            // matiz: negative caching. Without it, requests for a non-existent id
-            // hit the DB every single time (a "cache penetration" attack vector).
-            // Here we simply don't cache the miss to keep the example focused, but a
-            // production system would cache a short-lived tombstone for ~seconds.
-            echo "[Repository] Product #{$id} does not exist.\n";
-            return null;
-        }
-
-        // 3) ...then populate the cache so the next read is a hit.
-        $this->cache->set($key, $product, self::TTL);
-        echo "[Repository] Served product #{$id} from database (now cached).\n";
-        return $product;
-    }
-
-    public function changePrice(int $id, float $price): void
-    {
-        // Write path. Cache-Aside writes go to the DB first — the source of truth
-        // must always win — and then INVALIDATE the cached copy.
-        $this->db->updatePrice($id, $price);
-
-        // matiz: invalidate, don't update-in-place. Writing the new value into the
-        // cache here ("write-through") is tempting, but under concurrency it can
-        // resurrect stale data (two writers racing). Deleting the key is safe: the
-        // next reader simply repopulates from the fresh DB state.
-        $this->cache->forget("product:{$id}");
-    }
-}
+use DesignPatterns\Cloud\CacheAside\InMemoryCache;
+use DesignPatterns\Cloud\CacheAside\ProductDatabase;
+use DesignPatterns\Cloud\CacheAside\ProductRepository;
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 

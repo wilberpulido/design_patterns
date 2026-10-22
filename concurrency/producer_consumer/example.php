@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Laravel note:
  *
@@ -17,108 +19,19 @@
  *   a processing loop (the consumer), controlling memory usage on large datasets.
  */
 
-// ─── Shared buffer ────────────────────────────────────────────────────────────
-// The queue is the heart of the pattern. It decouples producers from consumers
-// so neither side needs to know about the other.
+// ─── Pattern map ──────────────────────────────────────────────────────────────
+// This file only runs the demo. Read the classes in src/ in this order:
+//   src/LogEntry.php               Message — what travels from producers to consumers
+//   src/LogQueue.php               Bounded buffer — decouples both sides, rejects when full
+//   src/AppLogger.php              Producer — enqueues entries without waiting for the write
+//   src/LogWriter.php              Consumer — dequeues and processes at its own pace
+// Executable guarantees of the pattern: tests/LogQueueTest.php
 
-class LogQueue
-{
-    private array $entries = [];
+require __DIR__ . '/../../vendor/autoload.php';
 
-    public function __construct(private int $maxSize = 8) {}
-
-    // Returns false if the buffer is full (backpressure signal).
-    public function enqueue(LogEntry $entry): bool
-    {
-        if (count($this->entries) >= $this->maxSize) {
-            return false; // buffer full — producer must back off
-        }
-        $this->entries[] = $entry;
-        return true;
-    }
-
-    public function dequeue(): ?LogEntry
-    {
-        return array_shift($this->entries) ?? null;
-    }
-
-    public function size(): int  { return count($this->entries); }
-    public function isEmpty(): bool { return empty($this->entries); }
-}
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-class LogEntry
-{
-    public readonly string $timestamp;
-
-    public function __construct(
-        public readonly string $level,
-        public readonly string $message,
-        public readonly string $source
-    ) {
-        $this->timestamp = date('H:i:s.') . str_pad((string)((int)(microtime(true) * 1000) % 1000), 3, '0', STR_PAD_LEFT);
-    }
-}
-
-// ─── Producer ─────────────────────────────────────────────────────────────────
-// The producer generates work and places it in the shared queue.
-// It does not know who will consume the entries or when.
-
-class AppLogger
-{
-    public function __construct(
-        private string   $name,
-        private LogQueue $queue
-    ) {}
-
-    public function log(string $level, string $message): void
-    {
-        $entry    = new LogEntry($level, $message, $this->name);
-        $accepted = $this->queue->enqueue($entry);
-
-        if ($accepted) {
-            echo "[{$this->name}] Produced  [{$level}] \"{$message}\" — buffer: {$this->queue->size()}\n";
-        } else {
-            // matiz: when the buffer is full the producer must decide: drop, block, or raise.
-            // Dropping is acceptable for non-critical logs; blocking is better for critical data.
-            // In production, a full buffer should also trigger a monitoring alert.
-            echo "[{$this->name}] DROPPED   [{$level}] \"{$message}\" — buffer full!\n";
-        }
-    }
-}
-
-// ─── Consumer ─────────────────────────────────────────────────────────────────
-// The consumer drains the queue at its own pace.
-// It does not know how many producers exist or what they produce.
-
-class LogWriter
-{
-    private int $processed = 0;
-
-    public function __construct(
-        private string   $name,
-        private LogQueue $queue
-    ) {}
-
-    public function consumeOne(): bool
-    {
-        $entry = $this->queue->dequeue();
-        if ($entry === null) {
-            return false;
-        }
-        $this->processed++;
-        echo "[{$this->name}] Writing   [{$entry->level}] from {$entry->source}: \"{$entry->message}\"\n";
-        return true;
-    }
-
-    public function drainAll(): void
-    {
-        while ($this->consumeOne());
-    }
-
-    public function getProcessed(): int { return $this->processed; }
-}
+use DesignPatterns\Concurrency\ProducerConsumer\AppLogger;
+use DesignPatterns\Concurrency\ProducerConsumer\LogQueue;
+use DesignPatterns\Concurrency\ProducerConsumer\LogWriter;
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 // PHP runs in a single thread, so we simulate interleaved production and
