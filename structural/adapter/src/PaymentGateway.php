@@ -9,5 +9,6 @@ namespace DesignPatterns\Structural\Adapter;
 interface PaymentGateway
 {
     public function charge(float $amount, string $currency, string $token): array;
+
     public function refund(string $transactionId): bool;
 }

@@ -28,7 +28,7 @@ declare(strict_types=1);
 //                                  write → DB + invalidate
 // Executable guarantees of the pattern: tests/ProductRepositoryTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Cloud\CacheAside\InMemoryCache;
 use DesignPatterns\Cloud\CacheAside\ProductDatabase;
@@ -38,7 +38,7 @@ use DesignPatterns\Cloud\CacheAside\ProductRepository;
 
 echo "=== E-commerce Catalog — Cache-Aside Pattern ===\n\n";
 
-$repo = new ProductRepository(new InMemoryCache(), new ProductDatabase());
+$repo = new ProductRepository(new InMemoryCache, new ProductDatabase);
 
 echo "--- Read #1: cold cache (expected MISS → DB → populate) ---\n";
 $repo->getById(1);

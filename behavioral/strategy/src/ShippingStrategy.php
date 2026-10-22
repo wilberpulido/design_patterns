@@ -8,6 +8,8 @@ namespace DesignPatterns\Behavioral\Strategy;
 interface ShippingStrategy
 {
     public function calculateCost(float $weightKg, string $destination): float;
+
     public function estimatedDays(): int;
+
     public function label(): string;
 }

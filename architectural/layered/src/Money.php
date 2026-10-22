@@ -11,7 +11,7 @@ namespace DesignPatterns\Architectural\Layered;
 class Money
 {
     public function __construct(
-        public readonly float  $amount,
+        public readonly float $amount,
         public readonly string $currency = 'USD'
     ) {}
 

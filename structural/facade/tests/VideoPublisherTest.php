@@ -21,16 +21,21 @@ final class VideoPublisherTest extends TestCase
     private function publisher(): VideoPublisher
     {
         // Spy on the last subsystem so we can check the facade ran the whole pipeline.
-        $this->notifier = new class extends SubscriberNotifier {
+        $this->notifier = new class extends SubscriberNotifier
+        {
             public int $calls = 0;
-            public function notify(string $channelId, string $title, string $videoUrl): void { $this->calls++; }
+
+            public function notify(string $channelId, string $title, string $videoUrl): void
+            {
+                $this->calls++;
+            }
         };
 
         return new VideoPublisher(
-            new VideoTranscoder(),
-            new ThumbnailGenerator(),
-            new CdnUploader(),
-            new VideoMetadataRepository(),
+            new VideoTranscoder,
+            new ThumbnailGenerator,
+            new CdnUploader,
+            new VideoMetadataRepository,
             $this->notifier,
         );
     }

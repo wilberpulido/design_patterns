@@ -31,7 +31,7 @@ declare(strict_types=1);
 //   src/PostController.php         Controller — receives input, coordinates Model and View
 // Executable guarantees of the pattern: tests/PostControllerTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Architectural\Mvc\PostController;
 use DesignPatterns\Architectural\Mvc\PostRepository;
@@ -41,14 +41,14 @@ use DesignPatterns\Architectural\Mvc\PostView;
 
 echo "=== Blog CMS — MVC Pattern ===\n";
 
-$repository = new PostRepository();
-$view       = new PostView();
+$repository = new PostRepository;
+$view = new PostView;
 $controller = new PostController($repository, $view);
 
 // Seed posts (in a real app this comes from the database)
 $repository->create('alice', 'Getting Started with MVC', 'MVC separates concerns into three layers...');
-$repository->create('bob',   'PHP 8 Features',           'Fibers, enums, named arguments...');
-$repository->create('alice', 'Deploying to Production',  'Use Docker for consistent environments...');
+$repository->create('bob', 'PHP 8 Features', 'Fibers, enums, named arguments...');
+$repository->create('alice', 'Deploying to Production', 'Use Docker for consistent environments...');
 
 // Simulate user actions (in a real app these come from HTTP routes)
 $controller->index();

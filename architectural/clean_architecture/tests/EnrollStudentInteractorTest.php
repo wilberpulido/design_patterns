@@ -22,19 +22,29 @@ final class EnrollStudentInteractorTest extends TestCase
 
     private function interactor(int $capacity = 2): EnrollStudentInteractor
     {
-        $students = new InMemoryStudentGateway();
+        $students = new InMemoryStudentGateway;
         $students->seed(new Student('s-1', 'Alice', 'alice@example.com'));
         $students->seed(new Student('s-2', 'Bob', 'bob@example.com'));
-        $courses = new InMemoryCourseGateway();
+        $courses = new InMemoryCourseGateway;
         $courses->seed(new Course('c-1', 'Clean Architecture', $capacity));
 
         // Spy presenter implementing the OUTPUT PORT: the interactor pushes its result
         // here instead of returning it, so this is where the test reads the outcome.
-        $this->presenter = new class implements EnrollStudentOutputPort {
+        $this->presenter = new class implements EnrollStudentOutputPort
+        {
             public ?EnrollStudentOutput $success = null;
+
             public ?string $error = null;
-            public function presentSuccess(EnrollStudentOutput $output): void { $this->success = $output; }
-            public function presentError(string $message): void { $this->error = $message; }
+
+            public function presentSuccess(EnrollStudentOutput $output): void
+            {
+                $this->success = $output;
+            }
+
+            public function presentError(string $message): void
+            {
+                $this->error = $message;
+            }
         };
 
         return new EnrollStudentInteractor($students, $courses, $this->presenter);

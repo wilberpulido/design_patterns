@@ -30,7 +30,7 @@ declare(strict_types=1);
 //   SECONDARY ADAPTERS   InMemoryRideRepository.php, PushNotificationAdapter.php
 // Executable guarantees of the pattern: tests/RideMatchingServiceTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Architectural\Hexagonal\InMemoryRideRepository;
 use DesignPatterns\Architectural\Hexagonal\PushNotificationAdapter;
@@ -44,9 +44,9 @@ use DesignPatterns\Architectural\Hexagonal\RideMatchingService;
 
 echo "=== Hexagonal Architecture — Ride-Hailing Service (PHP) ===\n\n";
 
-$repository = new InMemoryRideRepository();
-$notifier   = new PushNotificationAdapter();
-$service    = new RideMatchingService($repository, $notifier);
+$repository = new InMemoryRideRepository;
+$notifier = new PushNotificationAdapter;
+$service = new RideMatchingService($repository, $notifier);
 $controller = new RideHttpController($service, $service);
 
 echo "--- Scenario 1: Passenger requests a ride (driver available) ---\n";

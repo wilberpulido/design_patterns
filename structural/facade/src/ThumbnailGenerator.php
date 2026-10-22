@@ -10,6 +10,7 @@ class ThumbnailGenerator
     public function generate(string $filePath, int $atSecond): string
     {
         echo "[ThumbnailGenerator] Extracting frame at {$atSecond}s...\n";
-        return "/tmp/thumbnail.jpg";
+
+        return '/tmp/thumbnail.jpg';
     }
 }

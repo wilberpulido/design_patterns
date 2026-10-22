@@ -1,5 +1,5 @@
-import threading
 import os
+import threading
 
 # SINGLETON PATTERN - Python
 # Scenario: AppConfig — loads environment/config variables once at startup and
@@ -37,9 +37,9 @@ class AppConfig:
     def _initialize(self):
         # Simulate loading from environment variables or a config file
         self._settings = {
-            "app_env":         os.getenv("APP_ENV", "production"),
-            "debug":           os.getenv("DEBUG", "false"),
-            "db_host":         os.getenv("DB_HOST", "localhost"),
+            "app_env": os.getenv("APP_ENV", "production"),
+            "debug": os.getenv("DEBUG", "false"),
+            "db_host": os.getenv("DB_HOST", "localhost"),
             "max_connections": int(os.getenv("MAX_CONNECTIONS", "10")),
         }
         print(f"[AppConfig] Settings loaded: {self._settings}")

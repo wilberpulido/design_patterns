@@ -14,9 +14,15 @@ class InMemoryStudentGateway implements StudentGateway
 {
     private array $store = [];
 
-    public function seed(Student $s): void { $this->store[$s->getId()] = $s; }
+    public function seed(Student $s): void
+    {
+        $this->store[$s->getId()] = $s;
+    }
 
-    public function findById(string $id): ?Student { return $this->store[$id] ?? null; }
+    public function findById(string $id): ?Student
+    {
+        return $this->store[$id] ?? null;
+    }
 
     public function save(Student $s): void
     {

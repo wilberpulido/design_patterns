@@ -28,7 +28,7 @@ declare(strict_types=1);
 //                        WarehouseStockService.php
 // Executable guarantees of the pattern: tests/OrderApplicationServiceTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Architectural\Layered\MySqlOrderRepository;
 use DesignPatterns\Architectural\Layered\OrderApplicationService;
@@ -42,9 +42,9 @@ use DesignPatterns\Architectural\Layered\WarehouseStockService;
 
 $controller = new OrderController(
     new OrderApplicationService(
-        new MySqlOrderRepository(),
-        new StripePaymentGateway(),
-        new WarehouseStockService()
+        new MySqlOrderRepository,
+        new StripePaymentGateway,
+        new WarehouseStockService
     )
 );
 

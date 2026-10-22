@@ -30,7 +30,7 @@ declare(strict_types=1);
 //   src/ProductCatalogService.php  Client — depends only on the interface
 // Executable guarantees of the pattern: tests/ProductCatalogServiceTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Architectural\Repository\InMemoryProductRepository;
 use DesignPatterns\Architectural\Repository\MySqlProductRepository;
@@ -40,15 +40,15 @@ use DesignPatterns\Architectural\Repository\ProductCatalogService;
 // Production: inject MySQL implementation
 
 echo "=== Production (MySQL) ===\n";
-$service = new ProductCatalogService(new MySqlProductRepository());
+$service = new ProductCatalogService(new MySqlProductRepository);
 $service->getProductDetails(1);
 $service->listByCategory('electronics');
 
 // Testing: swap to InMemory — zero database dependency
 echo "\n=== Tests (InMemory) ===\n";
-$repo = new InMemoryProductRepository();
+$repo = new InMemoryProductRepository;
 $repo->save(new Product(1, 'Test Keyboard', 'electronics', 49.99, true));
-$repo->save(new Product(2, 'Test Mouse',    'electronics', 19.99, true));
+$repo->save(new Product(2, 'Test Mouse', 'electronics', 19.99, true));
 $service = new ProductCatalogService($repo);
 $service->listByCategory('electronics');
 $service->getProductDetails(99); // not found

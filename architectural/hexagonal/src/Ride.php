@@ -11,7 +11,8 @@ namespace DesignPatterns\Architectural\Hexagonal;
 class Ride
 {
     private ?string $driverId = null;
-    private string  $status   = 'requested'; // requested → accepted → in_progress → completed
+
+    private string $status = 'requested'; // requested → accepted → in_progress → completed
 
     public function __construct(
         private readonly string $id,
@@ -25,7 +26,7 @@ class Ride
             throw new \DomainException("Ride '{$this->id}' cannot be accepted — status is '{$this->status}'.");
         }
         $this->driverId = $driverId;
-        $this->status   = 'accepted';
+        $this->status = 'accepted';
     }
 
     public function start(): void
@@ -44,8 +45,23 @@ class Ride
         $this->status = 'completed';
     }
 
-    public function getId(): string        { return $this->id; }
-    public function getPassengerId(): string { return $this->passengerId; }
-    public function getDriverId(): ?string   { return $this->driverId; }
-    public function getStatus(): string      { return $this->status; }
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getPassengerId(): string
+    {
+        return $this->passengerId;
+    }
+
+    public function getDriverId(): ?string
+    {
+        return $this->driverId;
+    }
+
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
 }

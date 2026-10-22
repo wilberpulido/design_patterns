@@ -26,7 +26,7 @@ declare(strict_types=1);
 //   src/FraudDetectionObserver.php
 // Executable guarantees of the pattern: tests/OrderServiceTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Behavioral\Observer\EmailConfirmationObserver;
 use DesignPatterns\Behavioral\Observer\FraudDetectionObserver;
@@ -37,11 +37,11 @@ use DesignPatterns\Behavioral\Observer\OrderService;
 
 echo "=== E-Commerce Order System — Observer Pattern ===\n\n";
 
-$orderService = new OrderService();
+$orderService = new OrderService;
 
-$emailObserver = new EmailConfirmationObserver();
-$inventoryObserver = new InventoryObserver();
-$fraudObserver = new FraudDetectionObserver();
+$emailObserver = new EmailConfirmationObserver;
+$inventoryObserver = new InventoryObserver;
+$fraudObserver = new FraudDetectionObserver;
 
 // Register observers — the subject is now aware of who wants to be notified.
 $orderService->attach($emailObserver);

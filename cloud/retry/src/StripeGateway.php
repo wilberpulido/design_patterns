@@ -22,17 +22,18 @@ class StripeGateway
 
         if ($this->remainingFailures > 0) {
             $this->remainingFailures--;
-            throw new TransientException("Connection timeout to Stripe API");
+            throw new TransientException('Connection timeout to Stripe API');
         }
 
-        $txnId = 'txn_' . strtoupper(substr(md5($cardToken . microtime()), 0, 10));
+        $txnId = 'txn_'.strtoupper(substr(md5($cardToken.microtime()), 0, 10));
         echo "[StripeGateway] Charge approved. Transaction ID: {$txnId}\n";
+
         return $txnId;
     }
 
     public function chargeDeclinedCard(string $cardToken, float $amount): string
     {
         echo "[StripeGateway] Charging \${$amount} on token {$cardToken}...\n";
-        throw new PermanentException("Card declined: insufficient funds (do not retry)");
+        throw new PermanentException('Card declined: insufficient funds (do not retry)');
     }
 }

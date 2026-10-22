@@ -27,7 +27,7 @@ declare(strict_types=1);
 //                                  plus the __clone/__wakeup guards that keep it unique
 // Executable guarantees of the pattern: tests/AuditLoggerTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Creational\Singleton\AuditLogger;
 
@@ -42,7 +42,7 @@ echo "\n-- PaymentService requests the logger --\n";
 $loggerFromPayment = AuditLogger::getInstance();
 
 echo "\n-- Are both services using the same logger? --\n";
-echo ($loggerFromAuth === $loggerFromPayment ? "YES — same instance" : "NO — different instances") . "\n";
+echo ($loggerFromAuth === $loggerFromPayment ? 'YES — same instance' : 'NO — different instances')."\n";
 
 echo "\n-- AuthController records a login --\n";
 $loggerFromAuth->record('jane.doe', 'logged in');
@@ -50,7 +50,7 @@ $loggerFromAuth->record('jane.doe', 'logged in');
 echo "\n-- PaymentService records a sensitive action --\n";
 $loggerFromPayment->record('jane.doe', 'exported invoice #4821');
 
-echo "\n-- Total entries across both references: " . $loggerFromAuth->getEntryCount() . " --\n";
+echo "\n-- Total entries across both references: ".$loggerFromAuth->getEntryCount()." --\n";
 echo "(Both references see the same 2 entries because it's the same object)\n";
 
 echo "\n-- Flushing all entries at end of request --\n";
@@ -60,6 +60,6 @@ echo "\n-- Demonstrating the matiz: attempting to deserialize the singleton --\n
 try {
     $serialized = serialize($loggerFromAuth);
     unserialize($serialized);
-} catch (\Exception $e) {
-    echo "[AuditLogger] Caught: " . $e->getMessage() . "\n";
+} catch (Exception $e) {
+    echo '[AuditLogger] Caught: '.$e->getMessage()."\n";
 }

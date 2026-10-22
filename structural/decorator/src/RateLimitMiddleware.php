@@ -16,10 +16,11 @@ class RateLimitMiddleware extends MiddlewareDecorator
     public function handle(array $request): string
     {
         self::$count++;
-        echo "[RateLimitMiddleware] Request #" . self::$count . " (limit: {$this->limit})\n";
+        echo '[RateLimitMiddleware] Request #'.self::$count." (limit: {$this->limit})\n";
 
         if (self::$count > $this->limit) {
             echo "[RateLimitMiddleware] Limit exceeded — blocking.\n";
+
             return json_encode(['status' => 429, 'message' => 'Too Many Requests']);
         }
 

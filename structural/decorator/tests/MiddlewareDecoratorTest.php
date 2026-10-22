@@ -30,7 +30,7 @@ final class MiddlewareDecoratorTest extends TestCase
     {
         $this->expectOutputRegex('/Missing token — access denied/');
 
-        $pipeline = new LoggingMiddleware(new AuthMiddleware(new RouteHandler()));
+        $pipeline = new LoggingMiddleware(new AuthMiddleware(new RouteHandler));
 
         $response = json_decode($pipeline->handle(['method' => 'GET', 'path' => '/api/profile']), true);
 
@@ -42,10 +42,10 @@ final class MiddlewareDecoratorTest extends TestCase
         $this->expectOutputRegex('/Executing business logic/');
 
         // Same building blocks, different composition — no subclass per combination.
-        $pipeline = new RateLimitMiddleware(new AuthMiddleware(new RouteHandler()), limit: 1);
-        $request  = ['method' => 'GET', 'path' => '/api/profile', 'token' => 'valid'];
+        $pipeline = new RateLimitMiddleware(new AuthMiddleware(new RouteHandler), limit: 1);
+        $request = ['method' => 'GET', 'path' => '/api/profile', 'token' => 'valid'];
 
-        $first  = json_decode($pipeline->handle($request), true);
+        $first = json_decode($pipeline->handle($request), true);
         $second = json_decode($pipeline->handle($request), true);
 
         $this->assertSame(200, $first['status']);

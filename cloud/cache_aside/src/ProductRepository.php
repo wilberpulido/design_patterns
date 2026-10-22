@@ -16,7 +16,7 @@ class ProductRepository
     private const TTL = 30;
 
     public function __construct(
-        private InMemoryCache   $cache,
+        private InMemoryCache $cache,
         private ProductDatabase $db
     ) {}
 
@@ -28,6 +28,7 @@ class ProductRepository
         $cached = $this->cache->get($key);
         if ($cached !== null) {
             echo "[Repository] Served product #{$id} from cache.\n";
+
             return $cached;
         }
 
@@ -39,12 +40,14 @@ class ProductRepository
             // Here we simply don't cache the miss to keep the example focused, but a
             // production system would cache a short-lived tombstone for ~seconds.
             echo "[Repository] Product #{$id} does not exist.\n";
+
             return null;
         }
 
         // 3) ...then populate the cache so the next read is a hit.
         $this->cache->set($key, $product, self::TTL);
         echo "[Repository] Served product #{$id} from database (now cached).\n";
+
         return $product;
     }
 

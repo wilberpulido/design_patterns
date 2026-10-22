@@ -69,12 +69,12 @@ func (m *MetricsCollector) Report() {
 // could each create their own MetricsCollector instance, splitting the metric counts.
 // The naive version below would be UNSAFE under concurrency:
 //
-//   func GetCollectorUnsafe() *MetricsCollector {
-//       if collectorInstance == nil {             // goroutine A and B both see nil here
-//           collectorInstance = &MetricsCollector{} // both create separate instances
-//       }
-//       return collectorInstance
-//   }
+//	func GetCollectorUnsafe() *MetricsCollector {
+//	    if collectorInstance == nil {             // goroutine A and B both see nil here
+//	        collectorInstance = &MetricsCollector{} // both create separate instances
+//	    }
+//	    return collectorInstance
+//	}
 //
 // sync.Once solves this with an internal mutex — but only incurs locking cost once.
 // After the first call, it's effectively a lock-free read.
@@ -103,7 +103,8 @@ func demonstrateSyncOnceProtection() {
 }
 
 func main() {
-	fmt.Println("=== Singleton Pattern Demo — MetricsCollector (Go) ===\n")
+	fmt.Println("=== Singleton Pattern Demo — MetricsCollector (Go) ===")
+	fmt.Println()
 
 	fmt.Println("-- HTTP handler goroutine requests the collector --")
 	collectorFromHTTP := GetCollector()

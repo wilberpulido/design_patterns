@@ -13,11 +13,11 @@ class Post
     private string $status;
 
     public function __construct(
-        public readonly int    $id,
+        public readonly int $id,
         public readonly string $author,
-        public string          $title,
-        public string          $content,
-        string                 $status = 'draft'
+        public string $title,
+        public string $content,
+        string $status = 'draft'
     ) {
         $this->status = $status;
     }
@@ -32,6 +32,13 @@ class Post
         $this->status = 'published';
     }
 
-    public function getStatus(): string { return $this->status; }
-    public function isDraft(): bool     { return $this->status === 'draft'; }
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
 }

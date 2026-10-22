@@ -28,8 +28,23 @@ class Student
         $this->enrolledCourseIds[] = $courseId;
     }
 
-    public function getId(): string              { return $this->id; }
-    public function getName(): string            { return $this->name; }
-    public function getEmail(): string           { return $this->email; }
-    public function getEnrolledCourseIds(): array { return $this->enrolledCourseIds; }
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function getEnrolledCourseIds(): array
+    {
+        return $this->enrolledCourseIds;
+    }
 }

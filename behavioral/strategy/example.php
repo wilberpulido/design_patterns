@@ -32,13 +32,13 @@ declare(strict_types=1);
 //   src/OrderCheckout.php          Client — chooses strategies and uses the context
 // Executable guarantees of the pattern: tests/ShippingCalculatorTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Behavioral\Strategy\OrderCheckout;
 use DesignPatterns\Behavioral\Strategy\ShippingCalculator;
 use DesignPatterns\Behavioral\Strategy\StandardShipping;
 
 // Bootstrap
-$calculator = new ShippingCalculator(new StandardShipping());
-$checkout   = new OrderCheckout($calculator);
+$calculator = new ShippingCalculator(new StandardShipping);
+$checkout = new OrderCheckout($calculator);
 $checkout->displayShippingOptions('Mechanical Keyboard', 1.2, 'Buenos Aires');

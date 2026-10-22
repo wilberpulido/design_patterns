@@ -46,10 +46,10 @@ class AudioSystem:
 # The user just says "I'm leaving" — the facade knows what that means for every device.
 class SmartHomeFacade:
     def __init__(self) -> None:
-        self._lighting   = LightingSystem()
+        self._lighting = LightingSystem()
         self._thermostat = ThermostatSystem()
-        self._security   = SecuritySystem()
-        self._audio      = AudioSystem()
+        self._security = SecuritySystem()
+        self._audio = AudioSystem()
 
         # matiz: the facade tracks current state to make transitions intelligent.
         # Knowing we're already "away" could prevent re-triggering if called twice,

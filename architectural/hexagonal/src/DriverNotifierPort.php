@@ -14,5 +14,6 @@ namespace DesignPatterns\Architectural\Hexagonal;
 interface DriverNotifierPort
 {
     public function notifyAssignment(string $driverId, string $rideId): void;
+
     public function notifyRideStarted(string $passengerId, string $rideId): void;
 }

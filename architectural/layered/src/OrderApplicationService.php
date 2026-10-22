@@ -12,8 +12,8 @@ class OrderApplicationService
 {
     public function __construct(
         private OrderRepository $orders,
-        private PaymentGateway  $payments,
-        private StockService    $stock
+        private PaymentGateway $payments,
+        private StockService $stock
     ) {}
 
     public function placeOrder(PlaceOrderCommand $cmd): PlaceOrderResult
@@ -24,7 +24,7 @@ class OrderApplicationService
 
         foreach ($cmd->items as $item) {
             // Application coordinates infrastructure checks, domain enforces rules
-            if (!$this->stock->isAvailable($item['productId'], $item['quantity'])) {
+            if (! $this->stock->isAvailable($item['productId'], $item['quantity'])) {
                 throw new \RuntimeException("Product '{$item['name']}' is out of stock.");
             }
             $order->addItem(new OrderItem(
@@ -41,6 +41,7 @@ class OrderApplicationService
         $this->orders->save($order);
 
         echo "[OrderApplicationService] PlaceOrder use case completed.\n";
+
         return new PlaceOrderResult($order->id, $order->total()->amount, $txId);
     }
 }

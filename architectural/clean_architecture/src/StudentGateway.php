@@ -18,5 +18,6 @@ namespace DesignPatterns\Architectural\CleanArchitecture;
 interface StudentGateway
 {
     public function findById(string $id): ?Student;
+
     public function save(Student $student): void;
 }

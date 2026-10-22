@@ -14,9 +14,9 @@ class OrderCheckout
         echo "\n[OrderCheckout] Shipping options for \"{$product}\" ({$weight}kg → {$destination}):\n";
 
         $strategies = [
-            new StandardShipping(),
-            new ExpressShipping(),
-            new InternationalShipping(),
+            new StandardShipping,
+            new ExpressShipping,
+            new InternationalShipping,
         ];
 
         foreach ($strategies as $strategy) {

@@ -12,7 +12,7 @@ class PostView
 {
     public function renderList(array $posts, string $title): void
     {
-        echo "\n┌─ {$title} (" . count($posts) . " post(s))\n";
+        echo "\n┌─ {$title} (".count($posts)." post(s))\n";
         foreach ($posts as $post) {
             $badge = $post->isDraft() ? '[DRAFT]    ' : '[PUBLISHED]';
             echo "│  #{$post->id} {$badge} \"{$post->title}\" — by {$post->author}\n";

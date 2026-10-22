@@ -11,13 +11,13 @@ namespace DesignPatterns\Concurrency\ProducerConsumer;
 class AppLogger
 {
     public function __construct(
-        private string   $name,
+        private string $name,
         private LogQueue $queue
     ) {}
 
     public function log(string $level, string $message): void
     {
-        $entry    = new LogEntry($level, $message, $this->name);
+        $entry = new LogEntry($level, $message, $this->name);
         $accepted = $this->queue->enqueue($entry);
 
         if ($accepted) {

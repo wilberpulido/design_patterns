@@ -32,11 +32,11 @@ class PayPalAdapter implements PaymentGateway
             $amountInCents,
             strtoupper($currency),
             $token,
-            "Charge via adapter"
+            'Charge via adapter'
         );
 
         // Response normalization: translate PayPal's raw string into our standard array format.
-        $internalTxnId = 'TXN-' . uniqid();
+        $internalTxnId = 'TXN-'.uniqid();
         $this->transactionMap[$internalTxnId] = $paypalTxnId;
 
         echo "[PayPalAdapter] Charge complete. Internal: {$internalTxnId} → PayPal: {$paypalTxnId}\n";
@@ -50,7 +50,7 @@ class PayPalAdapter implements PaymentGateway
 
         // Look up the PayPal transaction ID that corresponds to our internal ID.
         $paypalTxnId = $this->transactionMap[$transactionId] ?? $transactionId;
-        $result = $this->paypal->cancelTransaction($paypalTxnId, "Customer refund request");
+        $result = $this->paypal->cancelTransaction($paypalTxnId, 'Customer refund request');
 
         return $result['status'] === 'cancelled';
     }

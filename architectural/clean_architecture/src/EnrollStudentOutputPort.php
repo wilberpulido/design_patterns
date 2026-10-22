@@ -19,5 +19,6 @@ namespace DesignPatterns\Architectural\CleanArchitecture;
 interface EnrollStudentOutputPort
 {
     public function presentSuccess(EnrollStudentOutput $output): void;
+
     public function presentError(string $message): void;
 }

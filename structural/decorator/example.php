@@ -24,7 +24,7 @@ declare(strict_types=1);
 //   src/AuthMiddleware.php
 // Executable guarantees of the pattern: tests/MiddlewareDecoratorTest.php
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
 use DesignPatterns\Structural\Decorator\AuthMiddleware;
 use DesignPatterns\Structural\Decorator\LoggingMiddleware;
@@ -40,7 +40,7 @@ use DesignPatterns\Structural\Decorator\RouteHandler;
 $pipeline = new LoggingMiddleware(
     new RateLimitMiddleware(
         new AuthMiddleware(
-            new RouteHandler()
+            new RouteHandler
         ),
         limit: 3
     )

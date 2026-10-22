@@ -9,7 +9,10 @@ namespace DesignPatterns\Architectural\Repository;
 interface ProductRepository
 {
     public function findById(int $id): ?Product;
+
     public function findByCategory(string $category): array;
+
     public function findAllActive(): array;
+
     public function save(Product $product): void;
 }

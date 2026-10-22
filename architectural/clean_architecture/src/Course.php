@@ -16,7 +16,7 @@ class Course
     public function __construct(
         private readonly string $id,
         private readonly string $title,
-        private readonly int    $capacity
+        private readonly int $capacity
     ) {}
 
     // Business rule: a course cannot exceed its capacity
@@ -28,8 +28,23 @@ class Course
         $this->enrollmentCount++;
     }
 
-    public function getId(): string    { return $this->id; }
-    public function getTitle(): string { return $this->title; }
-    public function getCapacity(): int { return $this->capacity; }
-    public function getEnrollmentCount(): int { return $this->enrollmentCount; }
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    public function getCapacity(): int
+    {
+        return $this->capacity;
+    }
+
+    public function getEnrollmentCount(): int
+    {
+        return $this->enrollmentCount;
+    }
 }

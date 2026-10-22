@@ -9,6 +9,7 @@ class Package:
     destination: str
     sender: str
 
+
 @dataclass
 class TrackingInfo:
     tracking_number: str
@@ -32,8 +33,12 @@ class ShippingCarrier(ABC):
 # We cannot modify this (it's a vendor library installed via pip).
 # Problems: works in pounds (not kg), returns raw dicts, uses a different parameter order.
 class FedExLegacySDK:
-    def create_shipment(self, weight_lbs: float, dest_address: str, origin: str) -> dict:
-        print(f"[FedExLegacySDK] Creating shipment: {weight_lbs} lbs → {dest_address} from {origin}")
+    def create_shipment(
+        self, weight_lbs: float, dest_address: str, origin: str
+    ) -> dict:
+        print(
+            f"[FedExLegacySDK] Creating shipment: {weight_lbs} lbs → {dest_address} from {origin}"
+        )
         tracking = f"FDX{abs(hash(dest_address + str(weight_lbs))) % 100000:05d}"
         return {"tracking_id": tracking, "transit_days": 3, "success": True}
 
@@ -57,17 +62,21 @@ class FedExAdapter(ShippingCarrier):
         print(f"[FedExAdapter] ship() — converting {package.weight_kg} kg → lbs...")
         weight_lbs = round(package.weight_kg * self.KG_TO_LBS, 3)
 
-        result = self._sdk.create_shipment(weight_lbs, package.destination, package.sender)
+        result = self._sdk.create_shipment(
+            weight_lbs, package.destination, package.sender
+        )
 
         # Normalize the raw dict into our domain object (TrackingInfo).
         return TrackingInfo(
             tracking_number=result["tracking_id"],
             carrier="FedEx",
-            estimated_days=result["transit_days"]
+            estimated_days=result["transit_days"],
         )
 
     def get_rate(self, package: Package) -> float:
-        print(f"[FedExAdapter] get_rate() — converting kg and mapping destination to FedEx zone...")
+        print(
+            "[FedExAdapter] get_rate() — converting kg and mapping destination to FedEx zone..."
+        )
         weight_lbs = round(package.weight_kg * self.KG_TO_LBS, 3)
 
         # Zone mapping: our interface works with destination strings; FedEx expects zone codes.
@@ -82,7 +91,9 @@ class FulfillmentService:
         self._carrier = carrier
 
     def fulfill(self, package: Package) -> None:
-        print(f"\n[FulfillmentService] Requesting shipping rate for package to {package.destination}...")
+        print(
+            f"\n[FulfillmentService] Requesting shipping rate for package to {package.destination}..."
+        )
         rate = self._carrier.get_rate(package)
         print(f"[FulfillmentService] Estimated shipping cost: ${rate}")
 

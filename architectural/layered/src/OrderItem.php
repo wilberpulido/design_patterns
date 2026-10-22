@@ -13,8 +13,8 @@ class OrderItem
     public function __construct(
         public readonly string $productId,
         public readonly string $name,
-        public readonly int    $quantity,
-        public readonly Money  $unitPrice
+        public readonly int $quantity,
+        public readonly Money $unitPrice
     ) {}
 
     public function subtotal(): Money

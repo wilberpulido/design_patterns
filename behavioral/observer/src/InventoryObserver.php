@@ -15,7 +15,7 @@ class InventoryObserver implements OrderObserver
     public function onOrderPlaced(array $order): void
     {
         $product = $order['product'];
-        $qty     = $order['qty'];
+        $qty = $order['qty'];
 
         if (isset($this->stock[$product])) {
             $this->stock[$product] -= $qty;

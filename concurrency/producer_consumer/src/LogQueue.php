@@ -21,6 +21,7 @@ class LogQueue
             return false; // buffer full — producer must back off
         }
         $this->entries[] = $entry;
+
         return true;
     }
 
@@ -29,6 +30,13 @@ class LogQueue
         return array_shift($this->entries) ?? null;
     }
 
-    public function size(): int  { return count($this->entries); }
-    public function isEmpty(): bool { return empty($this->entries); }
+    public function size(): int
+    {
+        return count($this->entries);
+    }
+
+    public function isEmpty(): bool
+    {
+        return empty($this->entries);
+    }
 }

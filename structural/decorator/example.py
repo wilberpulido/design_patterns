@@ -4,8 +4,8 @@ Scenario: Data Export Pipeline — a CSV exporter wrapped with compression,
 encryption, and audit logging for a compliance-heavy SaaS application.
 """
 
-from abc import ABC, abstractmethod
 import time
+from abc import ABC, abstractmethod
 
 
 class DataExporter(ABC):
@@ -39,7 +39,9 @@ class CompressionDecorator(ExporterDecorator):
         print(f"[CompressionDecorator] Compressing {len(raw)} bytes...")
         # Simulated compression — in production use gzip or zstd
         compressed = raw[::2]  # placeholder: take every other byte to shrink size
-        print(f"[CompressionDecorator] {len(raw)} → {len(compressed)} bytes (simulated)")
+        print(
+            f"[CompressionDecorator] {len(raw)} → {len(compressed)} bytes (simulated)"
+        )
         return compressed
 
 
@@ -61,7 +63,9 @@ class AuditLogDecorator(ExporterDecorator):
     def export(self, data: list[dict]) -> bytes:
         print(f"[AuditLogDecorator] Export started at {time.strftime('%H:%M:%S')}")
         result = self._wrapped.export(data)
-        print(f"[AuditLogDecorator] Export completed — {len(data)} records exported, audit trail saved.")
+        print(
+            f"[AuditLogDecorator] Export completed — {len(data)} records exported, audit trail saved."
+        )
         return result
 
 
@@ -73,19 +77,14 @@ class AuditLogDecorator(ExporterDecorator):
 
 records = [
     {"id": 1, "email": "alice@corp.com", "plan": "enterprise"},
-    {"id": 2, "email": "bob@corp.com",   "plan": "starter"},
+    {"id": 2, "email": "bob@corp.com", "plan": "starter"},
     {"id": 3, "email": "carol@corp.com", "plan": "enterprise"},
 ]
 
 # Build the pipeline: AuditLog → Encryption → Compression → Csv
 # Audit wraps everything so it captures the total time including encryption.
 pipeline = AuditLogDecorator(
-    EncryptionDecorator(
-        CompressionDecorator(
-            CsvExporter()
-        ),
-        key="aes-secret-key-42"
-    )
+    EncryptionDecorator(CompressionDecorator(CsvExporter()), key="aes-secret-key-42")
 )
 
 print("=== Decorator Pattern Demo — Data Export Pipeline (Python) ===\n")

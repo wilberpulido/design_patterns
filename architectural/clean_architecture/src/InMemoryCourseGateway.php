@@ -13,9 +13,15 @@ class InMemoryCourseGateway implements CourseGateway
 {
     private array $store = [];
 
-    public function seed(Course $c): void { $this->store[$c->getId()] = $c; }
+    public function seed(Course $c): void
+    {
+        $this->store[$c->getId()] = $c;
+    }
 
-    public function findById(string $id): ?Course { return $this->store[$id] ?? null; }
+    public function findById(string $id): ?Course
+    {
+        return $this->store[$id] ?? null;
+    }
 
     public function save(Course $c): void
     {

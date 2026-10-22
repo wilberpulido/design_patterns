@@ -20,17 +20,17 @@ import (
 type OrderStatus string
 
 const (
-	OrderPending    OrderStatus = "pending"
-	OrderConfirmed  OrderStatus = "confirmed"
-	OrderShipped    OrderStatus = "shipped"
-	OrderDelivered  OrderStatus = "delivered"
-	OrderCancelled  OrderStatus = "cancelled"
+	OrderPending   OrderStatus = "pending"
+	OrderConfirmed OrderStatus = "confirmed"
+	OrderShipped   OrderStatus = "shipped"
+	OrderDelivered OrderStatus = "delivered"
+	OrderCancelled OrderStatus = "cancelled"
 )
 
 type OrderItem struct {
-	SKU      string
-	Name     string
-	Quantity int
+	SKU       string
+	Name      string
+	Quantity  int
 	UnitPrice float64
 }
 
@@ -91,10 +91,10 @@ type PlaceOrderInput struct {
 }
 
 type PlaceOrderOutput struct {
-	OrderID    string
-	Status     string
-	TotalUsd   float64
-	ItemCount  int
+	OrderID   string
+	Status    string
+	TotalUsd  float64
+	ItemCount int
 }
 
 type ShipOrderInput struct {
@@ -176,8 +176,8 @@ func (i *PlaceOrderInteractor) Execute(input PlaceOrderInput) {
 }
 
 type ShipOrderInteractor struct {
-	orders   OrderGateway
-	shipping ShippingGateway
+	orders    OrderGateway
+	shipping  ShippingGateway
 	presenter ShipOrderOutputPort
 }
 
@@ -316,16 +316,17 @@ func (c *OrderController) PostShip(orderID string) {
 // ─────────────────────────────────────────────
 
 func main() {
-	fmt.Println("=== Clean Architecture — E-Commerce Order Fulfillment (Go) ===\n")
+	fmt.Println("=== Clean Architecture — E-Commerce Order Fulfillment (Go) ===")
+	fmt.Println()
 
-	orderGateway   := NewInMemoryOrderGateway()
+	orderGateway := NewInMemoryOrderGateway()
 	shippingGateway := &MockShippingGateway{}
 
 	placePresenter := &ConsolePlaceOrderPresenter{}
-	shipPresenter  := &ConsoleShipOrderPresenter{}
+	shipPresenter := &ConsoleShipOrderPresenter{}
 
 	placeInteractor := &PlaceOrderInteractor{orders: orderGateway, presenter: placePresenter}
-	shipInteractor  := &ShipOrderInteractor{orders: orderGateway, shipping: shippingGateway, presenter: shipPresenter}
+	shipInteractor := &ShipOrderInteractor{orders: orderGateway, shipping: shippingGateway, presenter: shipPresenter}
 
 	ctrl := &OrderController{
 		placePort:    placeInteractor,
@@ -336,7 +337,7 @@ func main() {
 	fmt.Println("--- Customer places an order ---")
 	ctrl.PostOrder("cust-007", []OrderItem{
 		{SKU: "SKU-A1", Name: "Mechanical Keyboard", Quantity: 1, UnitPrice: 129.99},
-		{SKU: "SKU-B3", Name: "USB-C Hub",           Quantity: 2, UnitPrice: 39.99},
+		{SKU: "SKU-B3", Name: "USB-C Hub", Quantity: 2, UnitPrice: 39.99},
 	})
 
 	orderID := ctrl.GetLastOrderID()

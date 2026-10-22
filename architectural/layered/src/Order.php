@@ -10,7 +10,8 @@ namespace DesignPatterns\Architectural\Layered;
 
 class Order
 {
-    private array  $items  = [];
+    private array $items = [];
+
     private string $status = 'pending';
 
     public function __construct(
@@ -31,7 +32,7 @@ class Order
     public function place(): void
     {
         if (empty($this->items)) {
-            throw new \LogicException("Cannot place an empty order.");
+            throw new \LogicException('Cannot place an empty order.');
         }
         $this->status = 'placed';
         echo "[Order] Order {$this->id} placed — status: placed\n";
@@ -41,10 +42,13 @@ class Order
     {
         return array_reduce(
             $this->items,
-            fn(Money $carry, OrderItem $item) => $carry->add($item->subtotal()),
+            fn (Money $carry, OrderItem $item) => $carry->add($item->subtotal()),
             new Money(0)
         );
     }
 
-    public function getStatus(): string { return $this->status; }
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
 }

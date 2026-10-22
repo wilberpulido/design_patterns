@@ -28,9 +28,9 @@ final class PostControllerTest extends TestCase
     {
         // The controller never decides the rule — it only routes the model's answer to the view.
         $this->expectOutputRegex('/already published/');
-        $repository = new PostRepository();
+        $repository = new PostRepository;
         $post = $repository->create('ana', 'MVC in PHP', 'Content');
-        $controller = new PostController($repository, new PostView());
+        $controller = new PostController($repository, new PostView);
 
         $controller->publish($post->id);
         $controller->publish($post->id);

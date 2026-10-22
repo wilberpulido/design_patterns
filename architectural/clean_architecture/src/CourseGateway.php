@@ -17,5 +17,6 @@ namespace DesignPatterns\Architectural\CleanArchitecture;
 interface CourseGateway
 {
     public function findById(string $id): ?Course;
+
     public function save(Course $course): void;
 }

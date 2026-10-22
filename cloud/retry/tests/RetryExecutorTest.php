@@ -31,6 +31,7 @@ final class RetryExecutorTest extends TestCase
             if (++$calls < 3) {
                 throw new TransientException('timeout');
             }
+
             return 'txn_ok';
         });
 

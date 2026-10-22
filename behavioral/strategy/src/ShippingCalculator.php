@@ -22,9 +22,10 @@ class ShippingCalculator
     public function quote(float $weightKg, string $destination): array
     {
         $cost = $this->strategy->calculateCost($weightKg, $destination);
+
         return [
-            'label'          => $this->strategy->label(),
-            'cost'           => $cost,
+            'label' => $this->strategy->label(),
+            'cost' => $cost,
             'estimated_days' => $this->strategy->estimatedDays(),
         ];
     }

@@ -44,17 +44,17 @@ func (r *PostgresEmployeeRepository) FindByID(id int) (*Employee, error) {
 func (r *PostgresEmployeeRepository) FindByDepartment(dept string) ([]*Employee, error) {
 	fmt.Printf("[PostgresEmployeeRepository] SELECT * FROM employees WHERE department = '%s' AND active = true\n", dept)
 	return []*Employee{
-		{ID: 1, Name: "María García",  Department: dept, Role: "Senior Engineer", Active: true},
-		{ID: 2, Name: "Carlos López",  Department: dept, Role: "Tech Lead",        Active: true},
+		{ID: 1, Name: "María García", Department: dept, Role: "Senior Engineer", Active: true},
+		{ID: 2, Name: "Carlos López", Department: dept, Role: "Tech Lead", Active: true},
 	}, nil
 }
 
 func (r *PostgresEmployeeRepository) FindAllActive() ([]*Employee, error) {
 	fmt.Println("[PostgresEmployeeRepository] SELECT * FROM employees WHERE active = true")
 	return []*Employee{
-		{ID: 1, Name: "María García",  Department: "Engineering", Active: true},
-		{ID: 2, Name: "Carlos López",  Department: "Engineering", Active: true},
-		{ID: 3, Name: "Ana Martínez",  Department: "Design",      Active: true},
+		{ID: 1, Name: "María García", Department: "Engineering", Active: true},
+		{ID: 2, Name: "Carlos López", Department: "Engineering", Active: true},
+		{ID: 3, Name: "Ana Martínez", Department: "Design", Active: true},
 	}, nil
 }
 
@@ -144,7 +144,7 @@ func main() {
 	fmt.Println("\n=== Tests (InMemory) ===")
 	repo := NewInMemoryEmployeeRepository()
 	repo.Save(&Employee{ID: 1, Name: "Test Engineer", Department: "Engineering", Role: "Junior", Active: true})
-	repo.Save(&Employee{ID: 2, Name: "Test Designer", Department: "Design",      Role: "Senior", Active: true})
+	repo.Save(&Employee{ID: 2, Name: "Test Designer", Department: "Design", Role: "Senior", Active: true})
 	service = NewHRService(repo)
 	service.ListDepartment("Engineering")
 	service.GetEmployeeProfile(99) // not found

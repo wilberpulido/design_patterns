@@ -14,13 +14,15 @@ namespace DesignPatterns\Architectural\Mvc;
 class PostRepository
 {
     /** @var Post[] */
-    private array $posts   = [];
-    private int   $nextId  = 1;
+    private array $posts = [];
+
+    private int $nextId = 1;
 
     public function create(string $author, string $title, string $content): Post
     {
         $post = new Post($this->nextId++, $author, $title, $content);
         $this->posts[$post->id] = $post;
+
         return $post;
     }
 
@@ -30,13 +32,16 @@ class PostRepository
     }
 
     /** @return Post[] */
-    public function findAll(): array { return array_values($this->posts); }
+    public function findAll(): array
+    {
+        return array_values($this->posts);
+    }
 
     /** @return Post[] */
     public function findByStatus(string $status): array
     {
         return array_values(
-            array_filter($this->posts, fn(Post $p) => $p->getStatus() === $status)
+            array_filter($this->posts, fn (Post $p) => $p->getStatus() === $status)
         );
     }
 }

@@ -11,28 +11,32 @@ The Dependency Rule: source code dependencies can ONLY point inward.
 """
 
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Optional
-import uuid
-
 
 # ─────────────────────────────────────────────
 # RING 1: ENTITIES — enterprise-wide business rules
 # ─────────────────────────────────────────────
 
+
 @dataclass
 class Patient:
-    id:         str
-    full_name:  str
+    id: str
+    full_name: str
     date_of_birth: date
-    allergies:  list[str] = field(default_factory=list)
+    allergies: list[str] = field(default_factory=list)
 
     def age(self) -> int:
         today = date.today()
-        return today.year - self.date_of_birth.year - (
-            (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day)
+        return (
+            today.year
+            - self.date_of_birth.year
+            - (
+                (today.month, today.day)
+                < (self.date_of_birth.month, self.date_of_birth.day)
+            )
         )
 
     # Business rule: a minor (<18) cannot be admitted without a guardian flag
@@ -45,10 +49,10 @@ class Patient:
 
 @dataclass
 class Prescription:
-    id:         str
+    id: str
     patient_id: str
-    drug:       str
-    dosage:     str
+    drug: str
+    dosage: str
     # Business rule: a prescription cannot be issued for a drug in the patient's allergy list
     # (checked by the entity, not the use case — it's an enterprise-wide rule)
 
@@ -63,31 +67,35 @@ class Prescription:
 # RING 2: USE CASES — application-specific business rules
 # ─────────────────────────────────────────────
 
+
 # Boundary data structures (InputData / OutputData)
 @dataclass(frozen=True)
 class RegisterPatientInput:
-    full_name:      str
-    date_of_birth:  date
-    allergies:      list[str]
+    full_name: str
+    date_of_birth: date
+    allergies: list[str]
+
 
 @dataclass(frozen=True)
 class RegisterPatientOutput:
-    patient_id:  str
-    full_name:   str
-    age:         int
+    patient_id: str
+    full_name: str
+    age: int
+
 
 @dataclass(frozen=True)
 class IssuePrescriptionInput:
-    patient_id:   str
-    drug:         str
-    dosage:       str
+    patient_id: str
+    drug: str
+    dosage: str
+
 
 @dataclass(frozen=True)
 class IssuePrescriptionOutput:
     prescription_id: str
-    patient_name:    str
-    drug:            str
-    dosage:          str
+    patient_name: str
+    drug: str
+    dosage: str
 
 
 # Output ports — implemented by Presenters (ring 3); called by use cases
@@ -97,20 +105,24 @@ class RegisterPatientOutputPort(ABC):
     @abstractmethod
     def present_error(self, message: str) -> None: ...
 
+
 class IssuePrescriptionOutputPort(ABC):
     @abstractmethod
     def present_issued(self, output: IssuePrescriptionOutput) -> None: ...
     @abstractmethod
     def present_error(self, message: str) -> None: ...
 
+
 # Input ports — implemented by Interactors; called by Controllers
 class RegisterPatientInputPort(ABC):
     @abstractmethod
     def execute(self, input_data: RegisterPatientInput) -> None: ...
 
+
 class IssuePrescriptionInputPort(ABC):
     @abstractmethod
     def execute(self, input_data: IssuePrescriptionInput) -> None: ...
+
 
 # Gateways — defined in ring 2, implemented in ring 3/4
 class PatientGateway(ABC):
@@ -119,7 +131,8 @@ class PatientGateway(ABC):
     @abstractmethod
     def save(self, patient: Patient) -> None: ...
     @abstractmethod
-    def find_by_id(self, id: str) -> Optional[Patient]: ...
+    def find_by_id(self, id: str) -> Patient | None: ...
+
 
 class PrescriptionGateway(ABC):
     @abstractmethod
@@ -135,41 +148,45 @@ class RegisterPatientInteractor(RegisterPatientInputPort):
     # This is the strict Clean Architecture approach — use case and presentation are fully decoupled.
     def __init__(
         self,
-        gateway:   PatientGateway,
+        gateway: PatientGateway,
         presenter: RegisterPatientOutputPort,
     ) -> None:
-        self._gateway   = gateway
+        self._gateway = gateway
         self._presenter = presenter
 
     def execute(self, inp: RegisterPatientInput) -> None:
         print(f"[RegisterPatientInteractor] Registering '{inp.full_name}'")
         patient = Patient(
-            id             = self._gateway.next_id(),
-            full_name      = inp.full_name,
-            date_of_birth  = inp.date_of_birth,
-            allergies      = list(inp.allergies),
+            id=self._gateway.next_id(),
+            full_name=inp.full_name,
+            date_of_birth=inp.date_of_birth,
+            allergies=list(inp.allergies),
         )
         self._gateway.save(patient)
-        self._presenter.present_registered(RegisterPatientOutput(
-            patient_id = patient.id,
-            full_name  = patient.full_name,
-            age        = patient.age(),
-        ))
+        self._presenter.present_registered(
+            RegisterPatientOutput(
+                patient_id=patient.id,
+                full_name=patient.full_name,
+                age=patient.age(),
+            )
+        )
 
 
 class IssuePrescriptionInteractor(IssuePrescriptionInputPort):
     def __init__(
         self,
-        patients:      PatientGateway,
+        patients: PatientGateway,
         prescriptions: PrescriptionGateway,
-        presenter:     IssuePrescriptionOutputPort,
+        presenter: IssuePrescriptionOutputPort,
     ) -> None:
-        self._patients      = patients
+        self._patients = patients
         self._prescriptions = prescriptions
-        self._presenter     = presenter
+        self._presenter = presenter
 
     def execute(self, inp: IssuePrescriptionInput) -> None:
-        print(f"[IssuePrescriptionInteractor] Issuing '{inp.drug}' for patient '{inp.patient_id}'")
+        print(
+            f"[IssuePrescriptionInteractor] Issuing '{inp.drug}' for patient '{inp.patient_id}'"
+        )
 
         patient = self._patients.find_by_id(inp.patient_id)
         if patient is None:
@@ -177,10 +194,10 @@ class IssuePrescriptionInteractor(IssuePrescriptionInputPort):
             return
 
         prescription = Prescription(
-            id         = self._prescriptions.next_id(),
-            patient_id = inp.patient_id,
-            drug       = inp.drug,
-            dosage     = inp.dosage,
+            id=self._prescriptions.next_id(),
+            patient_id=inp.patient_id,
+            drug=inp.drug,
+            dosage=inp.dosage,
         )
 
         try:
@@ -191,17 +208,20 @@ class IssuePrescriptionInteractor(IssuePrescriptionInputPort):
             return
 
         self._prescriptions.save(prescription)
-        self._presenter.present_issued(IssuePrescriptionOutput(
-            prescription_id = prescription.id,
-            patient_name    = patient.full_name,
-            drug            = prescription.drug,
-            dosage          = prescription.dosage,
-        ))
+        self._presenter.present_issued(
+            IssuePrescriptionOutput(
+                prescription_id=prescription.id,
+                patient_name=patient.full_name,
+                drug=prescription.drug,
+                dosage=prescription.dosage,
+            )
+        )
 
 
 # ─────────────────────────────────────────────
 # RING 3: INTERFACE ADAPTERS — Gateways, Controllers, Presenters
 # ─────────────────────────────────────────────
+
 
 # Gateways (infrastructure implementations)
 class InMemoryPatientGateway(PatientGateway):
@@ -218,7 +238,7 @@ class InMemoryPatientGateway(PatientGateway):
         print(f"[InMemoryPatientGateway] Saved '{patient.id}' ({patient.full_name})")
         self._store[patient.id] = patient
 
-    def find_by_id(self, id: str) -> Optional[Patient]:
+    def find_by_id(self, id: str) -> Patient | None:
         return self._store.get(id)
 
 
@@ -233,14 +253,16 @@ class InMemoryPrescriptionGateway(PrescriptionGateway):
         return id_
 
     def save(self, p: Prescription) -> None:
-        print(f"[InMemoryPrescriptionGateway] Saved prescription '{p.id}' — {p.drug} {p.dosage}")
+        print(
+            f"[InMemoryPrescriptionGateway] Saved prescription '{p.id}' — {p.drug} {p.dosage}"
+        )
         self._store[p.id] = p
 
 
 # Presenters — convert OutputData into view models
 class CliRegistrationPresenter(RegisterPatientOutputPort):
     def __init__(self) -> None:
-        self.view_model: Optional[dict] = None
+        self.view_model: dict | None = None
 
     def present_registered(self, output: RegisterPatientOutput) -> None:
         self.view_model = {
@@ -257,14 +279,14 @@ class CliRegistrationPresenter(RegisterPatientOutputPort):
 
 class CliPrescriptionPresenter(IssuePrescriptionOutputPort):
     def __init__(self) -> None:
-        self.view_model: Optional[dict] = None
+        self.view_model: dict | None = None
 
     def present_issued(self, output: IssuePrescriptionOutput) -> None:
         self.view_model = {
-            "rx":      output.prescription_id,
+            "rx": output.prescription_id,
             "patient": output.patient_name,
-            "drug":    output.drug,
-            "dosage":  output.dosage,
+            "drug": output.drug,
+            "dosage": output.dosage,
         }
         print(f"[CliPrescriptionPresenter] ✓ Prescription issued: {self.view_model}")
 
@@ -280,11 +302,13 @@ class PatientController:
 
     def post_register(self, body: dict) -> None:
         print(f"[PatientController] POST /patients  name='{body['full_name']}'")
-        self._register.execute(RegisterPatientInput(
-            full_name      = body["full_name"],
-            date_of_birth  = body["date_of_birth"],
-            allergies      = body.get("allergies", []),
-        ))
+        self._register.execute(
+            RegisterPatientInput(
+                full_name=body["full_name"],
+                date_of_birth=body["date_of_birth"],
+                allergies=body.get("allergies", []),
+            )
+        )
 
 
 class PrescriptionController:
@@ -293,11 +317,13 @@ class PrescriptionController:
 
     def post_prescription(self, body: dict) -> None:
         print(f"[PrescriptionController] POST /prescriptions  drug='{body['drug']}'")
-        self._issue.execute(IssuePrescriptionInput(
-            patient_id = body["patient_id"],
-            drug       = body["drug"],
-            dosage     = body["dosage"],
-        ))
+        self._issue.execute(
+            IssuePrescriptionInput(
+                patient_id=body["patient_id"],
+                drug=body["drug"],
+                dosage=body["dosage"],
+            )
+        )
 
 
 # ─────────────────────────────────────────────
@@ -307,37 +333,45 @@ class PrescriptionController:
 if __name__ == "__main__":
     print("=== Clean Architecture — Patient Intake System (Python) ===\n")
 
-    patient_gw      = InMemoryPatientGateway()
+    patient_gw = InMemoryPatientGateway()
     prescription_gw = InMemoryPrescriptionGateway()
 
-    reg_presenter  = CliRegistrationPresenter()
-    rx_presenter   = CliPrescriptionPresenter()
+    reg_presenter = CliRegistrationPresenter()
+    rx_presenter = CliPrescriptionPresenter()
 
     register_interactor = RegisterPatientInteractor(patient_gw, reg_presenter)
-    issue_interactor    = IssuePrescriptionInteractor(patient_gw, prescription_gw, rx_presenter)
+    issue_interactor = IssuePrescriptionInteractor(
+        patient_gw, prescription_gw, rx_presenter
+    )
 
-    patient_ctrl      = PatientController(register_interactor)
+    patient_ctrl = PatientController(register_interactor)
     prescription_ctrl = PrescriptionController(issue_interactor)
 
     print("--- Register a patient with a penicillin allergy ---")
-    patient_ctrl.post_register({
-        "full_name":      "Maria López",
-        "date_of_birth":  date(1985, 3, 15),
-        "allergies":      ["penicillin", "aspirin"],
-    })
+    patient_ctrl.post_register(
+        {
+            "full_name": "Maria López",
+            "date_of_birth": date(1985, 3, 15),
+            "allergies": ["penicillin", "aspirin"],
+        }
+    )
 
     patient_id = reg_presenter.view_model["patient_id"]  # type: ignore
 
     print("\n--- Doctor issues a safe prescription ---")
-    prescription_ctrl.post_prescription({
-        "patient_id": patient_id,
-        "drug":       "Amoxicillin",
-        "dosage":     "500mg every 8h for 7 days",
-    })
+    prescription_ctrl.post_prescription(
+        {
+            "patient_id": patient_id,
+            "drug": "Amoxicillin",
+            "dosage": "500mg every 8h for 7 days",
+        }
+    )
 
     print("\n--- Doctor accidentally prescribes a drug the patient is allergic to ---")
-    prescription_ctrl.post_prescription({
-        "patient_id": patient_id,
-        "drug":       "Penicillin",
-        "dosage":     "250mg every 6h",
-    })
+    prescription_ctrl.post_prescription(
+        {
+            "patient_id": patient_id,
+            "drug": "Penicillin",
+            "dosage": "250mg every 6h",
+        }
+    )

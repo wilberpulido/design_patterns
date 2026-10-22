@@ -21,17 +21,41 @@ final class RideMatchingServiceTest extends TestCase
     // whether it talks to a real database/push service or to these fakes.
     private function service(?string $availableDriver): RideMatchingService
     {
-        $rides = new class($availableDriver) implements RideRepositoryPort {
+        $rides = new class($availableDriver) implements RideRepositoryPort
+        {
             public array $store = [];
+
             public function __construct(private ?string $driver) {}
-            public function nextId(): string { return 'ride-1'; }
-            public function save(Ride $ride): void { $this->store[$ride->getId()] = $ride; }
-            public function findById(string $id): ?Ride { return $this->store[$id] ?? null; }
-            public function findAvailableDriverId(): ?string { return $this->driver; }
+
+            public function nextId(): string
+            {
+                return 'ride-1';
+            }
+
+            public function save(Ride $ride): void
+            {
+                $this->store[$ride->getId()] = $ride;
+            }
+
+            public function findById(string $id): ?Ride
+            {
+                return $this->store[$id] ?? null;
+            }
+
+            public function findAvailableDriverId(): ?string
+            {
+                return $this->driver;
+            }
         };
-        $this->notifier = new class implements DriverNotifierPort {
+        $this->notifier = new class implements DriverNotifierPort
+        {
             public array $assigned = [];
-            public function notifyAssignment(string $driverId, string $rideId): void { $this->assigned[] = $driverId; }
+
+            public function notifyAssignment(string $driverId, string $rideId): void
+            {
+                $this->assigned[] = $driverId;
+            }
+
             public function notifyRideStarted(string $passengerId, string $rideId): void {}
         };
 

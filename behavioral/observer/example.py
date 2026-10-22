@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List
 from dataclasses import dataclass
+
 
 # ─── Event data ───────────────────────────────────────────────────────────────
 # A dataclass groups all relevant information about a price change.
@@ -31,7 +31,7 @@ class StockTicker:
     def __init__(self, ticker: str, initial_price: float):
         self.ticker = ticker
         self._price = initial_price
-        self._observers: List[PriceObserver] = []
+        self._observers: list[PriceObserver] = []
 
     def subscribe(self, observer: PriceObserver) -> None:
         self._observers.append(observer)
@@ -55,19 +55,24 @@ class StockTicker:
         self._price = new_price
 
         direction = "▲" if new_price > event.old_price else "▼"
-        print(f"\n[StockTicker:{self.ticker}] Price updated: "
-              f"${event.old_price:.2f} → ${new_price:.2f} {direction} "
-              f"({event.change_pct:+.2f}%)")
+        print(
+            f"\n[StockTicker:{self.ticker}] Price updated: "
+            f"${event.old_price:.2f} → ${new_price:.2f} {direction} "
+            f"({event.change_pct:+.2f}%)"
+        )
 
         self._notify(event)
 
     def _notify(self, event: PriceChangedEvent) -> None:
-        print(f"[StockTicker:{self.ticker}] Notifying {len(self._observers)} observer(s)...")
+        print(
+            f"[StockTicker:{self.ticker}] Notifying {len(self._observers)} observer(s)..."
+        )
         for observer in self._observers:
             observer.on_price_changed(event)
 
 
 # ─── Concrete Observers ───────────────────────────────────────────────────────
+
 
 class AlertObserver(PriceObserver):
     """Fires an alert when price moves more than a given threshold."""
@@ -79,11 +84,15 @@ class AlertObserver(PriceObserver):
         abs_change = abs(event.change_pct)
         if abs_change >= self.threshold_pct:
             direction = "surged" if event.change_pct > 0 else "dropped"
-            print(f"[AlertSystem] ⚠ {event.ticker} {direction} {abs_change:.2f}%! "
-                  f"Sending push notification...")
+            print(
+                f"[AlertSystem] ⚠ {event.ticker} {direction} {abs_change:.2f}%! "
+                f"Sending push notification..."
+            )
         else:
-            print(f"[AlertSystem] {event.ticker} change ({event.change_pct:+.2f}%) "
-                  f"below threshold. No alert.")
+            print(
+                f"[AlertSystem] {event.ticker} change ({event.change_pct:+.2f}%) "
+                f"below threshold. No alert."
+            )
 
 
 class PortfolioObserver(PriceObserver):
@@ -97,9 +106,11 @@ class PortfolioObserver(PriceObserver):
         self._portfolio_value = event.new_price * self.shares_held
         gain_loss = (event.new_price - event.old_price) * self.shares_held
         symbol = "+" if gain_loss >= 0 else ""
-        print(f"[Portfolio] {event.ticker} x{self.shares_held} shares → "
-              f"value: ${self._portfolio_value:,.2f} "
-              f"(P&L: {symbol}${gain_loss:,.2f})")
+        print(
+            f"[Portfolio] {event.ticker} x{self.shares_held} shares → "
+            f"value: ${self._portfolio_value:,.2f} "
+            f"(P&L: {symbol}${gain_loss:,.2f})"
+        )
 
 
 class AuditLogObserver(PriceObserver):
@@ -120,8 +131,10 @@ class AuditLogObserver(PriceObserver):
             "change_pct": round(event.change_pct, 4),
         }
         self._log.append(entry)
-        print(f"[AuditLog] Tick recorded for {event.ticker}. "
-              f"Total records: {len(self._log)}")
+        print(
+            f"[AuditLog] Tick recorded for {event.ticker}. "
+            f"Total records: {len(self._log)}"
+        )
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
@@ -130,9 +143,9 @@ if __name__ == "__main__":
 
     aapl = StockTicker("AAPL", initial_price=182.50)
 
-    alert_observer     = AlertObserver(threshold_pct=2.0)
+    alert_observer = AlertObserver(threshold_pct=2.0)
     portfolio_observer = PortfolioObserver(shares_held=100)
-    audit_observer     = AuditLogObserver()
+    audit_observer = AuditLogObserver()
 
     aapl.subscribe(alert_observer)
     aapl.subscribe(portfolio_observer)

@@ -21,6 +21,7 @@ class RetryExecutor
                 echo "[RetryExecutor] Attempt {$attempt}/{$this->policy->maxAttempts}...\n";
                 $result = $operation();
                 echo "[RetryExecutor] Success on attempt {$attempt}.\n";
+
                 return $result;
 
             } catch (TransientException $e) {

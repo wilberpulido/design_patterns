@@ -13,7 +13,7 @@ class PostController
 {
     public function __construct(
         private PostRepository $repository,
-        private PostView       $view
+        private PostView $view
     ) {}
 
     public function index(): void
@@ -34,6 +34,7 @@ class PostController
         $post = $this->repository->findById($id);
         if ($post === null) {
             $this->view->renderError("Post #{$id} not found.");
+
             return;
         }
         $this->view->renderPost($post);
@@ -45,6 +46,7 @@ class PostController
         $post = $this->repository->findById($id);
         if ($post === null) {
             $this->view->renderError("Post #{$id} not found.");
+
             return;
         }
         try {
