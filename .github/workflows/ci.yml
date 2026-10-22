@@ -29,6 +29,11 @@ jobs:
       # --no-interaction: nobody is at the keyboard; --prefer-dist: download zips, not git clones.
       - run: composer install --no-interaction --prefer-dist --no-progress
 
+      # Lint before testing: --test only REPORTS badly formatted files (exit 1), it never rewrites.
+      # Locally, `vendor/bin/pint` without --test fixes them.
+      - name: Check PHP formatting (Pint)
+        run: vendor/bin/pint --test
+
       # PHPUnit lives in vendor/bin because Composer installed it. Exit code ≠ 0 → job fails.
       - run: vendor/bin/phpunit
 
@@ -69,6 +74,14 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+      # Pinned to the version used locally: without a ruff.toml, the rule set is ruff's
+      # default for that version, so an unpinned upgrade could turn the job red on its own.
+      - run: pip install ruff==0.17.1
+      # format --check = formatter in report-only mode; check = linter (unused vars, imports...).
+      - name: Lint Python (ruff)
+        run: |
+          ruff format --check .
+          ruff check .
       - name: Run every example.py
         run: bash .github/scripts/run-examples.sh example.py python
 
@@ -83,6 +96,18 @@ jobs:
           # setup-go caches modules by default, keyed on go.sum — this repo has no
           # go.mod/go.sum (each example is a standalone `package main`), so turn it off.
           cache: false
+      # gofmt -l only LISTS unformatted files and still exits 0, so the step fails
+      # explicitly when that list is not empty.
+      - name: Check Go formatting (gofmt)
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "::error::Run 'gofmt -w .' on: $unformatted"
+            exit 1
+          fi
+      # go vet catches suspicious code that compiles fine (e.g. Println with a redundant "\n").
+      - name: Vet every example.go
+        run: bash .github/scripts/run-examples.sh example.go go vet
       - name: Run every example.go
         run: bash .github/scripts/run-examples.sh example.go go run
 
@@ -97,7 +122,8 @@ jobs:
           java-version: "21"
       # run-java.sh compiles with javac and runs the class that declares main():
       # `java example.java` would run the FIRST class in the file, which fails in
-      # examples where main() lives in a later class.
+      # examples where main() lives in a later class. javac runs with -Xlint:all -Werror,
+      # so any compiler warning fails the job — that is Java's "linter" here.
       - name: Compile and run every example.java
         run: bash .github/scripts/run-examples.sh example.java bash "$GITHUB_WORKSPACE/.github/scripts/run-java.sh"
 
