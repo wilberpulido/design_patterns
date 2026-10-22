@@ -21,6 +21,12 @@ declare(strict_types=1);
  * - The logger must be accessible from anywhere: controllers, services, jobs.
  */
 
+// ─── Pattern map ──────────────────────────────────────────────────────────────
+// This file only runs the demo. Read the classes in src/ in this order:
+//   src/AuditLogger.php            the Singleton: private constructor + static getInstance(),
+//                                  plus the __clone/__wakeup guards that keep it unique
+// Executable guarantees of the pattern: tests/AuditLoggerTest.php
+
 require __DIR__ . '/../../vendor/autoload.php';
 
 use DesignPatterns\Creational\Singleton\AuditLogger;

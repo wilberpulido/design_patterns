@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * LARAVEL NOTE
  *
@@ -18,266 +20,26 @@
  * - App\Infrastructure\Repositories: Eloquent implementations of gateway interfaces.
  */
 
-// ─────────────────────────────────────────────
-// ENTITIES — enterprise-wide business rules (innermost ring)
-// Stable: change only when core business rules change, not when use cases change.
-// ─────────────────────────────────────────────
+// ─── Pattern map ──────────────────────────────────────────────────────────────
+// This file only runs the demo. Read the classes in src/ in this order:
+//   RING 1 ENTITIES      Student.php, Course.php
+//   RING 2 USE CASES     EnrollStudentInteractor.php + its boundaries: EnrollStudentInputPort.php,
+//                        EnrollStudentOutputPort.php, EnrollStudentInput.php,
+//                        EnrollStudentOutput.php, StudentGateway.php, CourseGateway.php
+//   RING 3 ADAPTERS      EnrollmentController.php, JsonEnrollmentPresenter.php,
+//                        InMemoryStudentGateway.php, InMemoryCourseGateway.php
+//   RING 4 FRAMEWORKS    the composition root at the bottom of this file
+// Executable guarantees of the pattern: tests/EnrollStudentInteractorTest.php
 
-class Student
-{
-    private array $enrolledCourseIds = [];
+require __DIR__ . '/../../vendor/autoload.php';
 
-    public function __construct(
-        private readonly string $id,
-        private readonly string $name,
-        private readonly string $email
-    ) {}
-
-    // Business rule: a student cannot enroll in the same course twice
-    public function enrollIn(string $courseId): void
-    {
-        if (in_array($courseId, $this->enrolledCourseIds, true)) {
-            throw new \DomainException("Student '{$this->id}' is already enrolled in '{$courseId}'.");
-        }
-        $this->enrolledCourseIds[] = $courseId;
-    }
-
-    public function getId(): string              { return $this->id; }
-    public function getName(): string            { return $this->name; }
-    public function getEmail(): string           { return $this->email; }
-    public function getEnrolledCourseIds(): array { return $this->enrolledCourseIds; }
-}
-
-class Course
-{
-    private int $enrollmentCount = 0;
-
-    public function __construct(
-        private readonly string $id,
-        private readonly string $title,
-        private readonly int    $capacity
-    ) {}
-
-    // Business rule: a course cannot exceed its capacity
-    public function acceptEnrollment(): void
-    {
-        if ($this->enrollmentCount >= $this->capacity) {
-            throw new \DomainException("Course '{$this->id}' is at capacity ({$this->capacity}).");
-        }
-        $this->enrollmentCount++;
-    }
-
-    public function getId(): string    { return $this->id; }
-    public function getTitle(): string { return $this->title; }
-    public function getCapacity(): int { return $this->capacity; }
-    public function getEnrollmentCount(): int { return $this->enrollmentCount; }
-}
-
-// ─────────────────────────────────────────────
-// USE CASES — application-specific business rules (second ring)
-//
-// Clean Architecture defines EXPLICIT data structures for every boundary crossing:
-//   - InputData  : crosses from Controller into the Use Case
-//   - OutputData : crosses from the Use Case into the Presenter
-//   - InputPort  : interface the Controller calls
-//   - OutputPort : interface the Presenter implements (use case "pushes" data, never returns it)
-// ─────────────────────────────────────────────
-
-// Boundary DTOs — plain data, no business logic
-class EnrollStudentInput
-{
-    public function __construct(
-        public readonly string $studentId,
-        public readonly string $courseId
-    ) {}
-}
-
-class EnrollStudentOutput
-{
-    public function __construct(
-        public readonly string $studentName,
-        public readonly string $courseTitle,
-        public readonly int    $enrollmentCount,
-        public readonly int    $capacity
-    ) {}
-}
-
-// Output port — the use case calls this to deliver results
-// The Presenter implements it; the Interactor never returns a value directly.
-interface EnrollStudentOutputPort
-{
-    public function presentSuccess(EnrollStudentOutput $output): void;
-    public function presentError(string $message): void;
-}
-
-// Input port — the Controller calls this
-interface EnrollStudentInputPort
-{
-    public function execute(EnrollStudentInput $input): void;
-}
-
-// Gateways — defined in the use case ring, implemented in the infrastructure ring
-interface StudentGateway
-{
-    public function findById(string $id): ?Student;
-    public function save(Student $student): void;
-}
-
-interface CourseGateway
-{
-    public function findById(string $id): ?Course;
-    public function save(Course $course): void;
-}
-
-// Interactor — implements InputPort, depends on OutputPort and gateways
-class EnrollStudentInteractor implements EnrollStudentInputPort
-{
-    // matiz: the Interactor holds the OUTPUT PORT (the presenter interface), not a return type.
-    // This separates "what to compute" from "how to display it".
-    // The same interactor can feed a JSON API, an HTML page, or an event queue —
-    // just swap the presenter; the business logic is untouched.
-    public function __construct(
-        private StudentGateway          $students,
-        private CourseGateway           $courses,
-        private EnrollStudentOutputPort $presenter
-    ) {}
-
-    public function execute(EnrollStudentInput $input): void
-    {
-        echo "[EnrollStudentInteractor] Enrollment request: student='{$input->studentId}' course='{$input->courseId}'\n";
-
-        $student = $this->students->findById($input->studentId);
-        if ($student === null) {
-            $this->presenter->presentError("Student '{$input->studentId}' not found.");
-            return;
-        }
-
-        $course = $this->courses->findById($input->courseId);
-        if ($course === null) {
-            $this->presenter->presentError("Course '{$input->courseId}' not found.");
-            return;
-        }
-
-        // Business rules enforced by the entities themselves — the interactor only orchestrates.
-        // Entities signal a violated rule by throwing; translating that into an output-port
-        // call is the interactor's job, so the controller never sees domain exceptions.
-        // Only DomainException is caught: infrastructure failures must not be disguised as 422s.
-        try {
-            $student->enrollIn($course->getId());
-            $course->acceptEnrollment();
-        } catch (\DomainException $e) {
-            // matiz: if enrollIn() succeeds but acceptEnrollment() throws, the student was already
-            // mutated in memory (and the in-memory gateway holds that same reference), leaving a
-            // half-applied change. Real apps wrap this in a transaction (DB::transaction() in
-            // Laravel) or validate every rule before mutating any entity.
-            echo "[EnrollStudentInteractor] Business rule violated — routing it to the presenter\n";
-            $this->presenter->presentError($e->getMessage());
-            return;
-        }
-
-        $this->students->save($student);
-        $this->courses->save($course);
-
-        echo "[EnrollStudentInteractor] Enrollment persisted — pushing output to presenter\n";
-
-        // Use case PUSHES to the presenter instead of returning — the output boundary is explicit
-        $this->presenter->presentSuccess(new EnrollStudentOutput(
-            studentName:     $student->getName(),
-            courseTitle:     $course->getTitle(),
-            enrollmentCount: $course->getEnrollmentCount(),
-            capacity:        $course->getCapacity(),
-        ));
-    }
-}
-
-// ─────────────────────────────────────────────
-// INTERFACE ADAPTERS — third ring (Controllers, Presenters, Gateways)
-// Convert data between use-case format and external formats (HTTP, DB)
-// ─────────────────────────────────────────────
-
-// Gateways (infrastructure adapters)
-class InMemoryStudentGateway implements StudentGateway
-{
-    private array $store = [];
-
-    public function seed(Student $s): void { $this->store[$s->getId()] = $s; }
-
-    public function findById(string $id): ?Student { return $this->store[$id] ?? null; }
-
-    public function save(Student $s): void
-    {
-        echo "[InMemoryStudentGateway] Saved student '{$s->getId()}'\n";
-        $this->store[$s->getId()] = $s;
-    }
-}
-
-class InMemoryCourseGateway implements CourseGateway
-{
-    private array $store = [];
-
-    public function seed(Course $c): void { $this->store[$c->getId()] = $c; }
-
-    public function findById(string $id): ?Course { return $this->store[$id] ?? null; }
-
-    public function save(Course $c): void
-    {
-        $ratio = "{$c->getEnrollmentCount()}/{$c->getCapacity()}";
-        echo "[InMemoryCourseGateway] Saved course '{$c->getId()}' — enrolled: {$ratio}\n";
-        $this->store[$c->getId()] = $c;
-    }
-}
-
-// Presenter — implements OutputPort, shapes data into the view model the controller will return
-class JsonEnrollmentPresenter implements EnrollStudentOutputPort
-{
-    private ?array $viewModel = null;
-
-    public function presentSuccess(EnrollStudentOutput $output): void
-    {
-        // matiz: the presenter converts OutputData into the format the delivery mechanism needs.
-        // A different presenter could format the same OutputData as an HTML confirmation page.
-        $this->viewModel = [
-            'status'        => 'enrolled',
-            'student'       => $output->studentName,
-            'course'        => $output->courseTitle,
-            'seats_taken'   => "{$output->enrollmentCount}/{$output->capacity}",
-        ];
-        echo "[JsonEnrollmentPresenter] Shaped success ViewModel: " . json_encode($this->viewModel) . "\n";
-    }
-
-    public function presentError(string $message): void
-    {
-        $this->viewModel = ['error' => $message];
-        echo "[JsonEnrollmentPresenter] Shaped error ViewModel: " . json_encode($this->viewModel) . "\n";
-    }
-
-    public function getViewModel(): ?array { return $this->viewModel; }
-}
-
-// Controller — converts HTTP input into InputData and invokes the use case
-class EnrollmentController
-{
-    public function __construct(
-        private EnrollStudentInputPort  $useCase,
-        private JsonEnrollmentPresenter $presenter
-    ) {}
-
-    public function postEnrollment(array $request): array
-    {
-        echo "[EnrollmentController] POST /enrollments  student='{$request['student_id']}' course='{$request['course_id']}'\n";
-
-        // Controller converts HTTP body into use-case InputData — these are different objects
-        $input = new EnrollStudentInput($request['student_id'], $request['course_id']);
-        $this->useCase->execute($input);
-
-        // Controller reads the ViewModel from the presenter after the use case runs
-        $vm = $this->presenter->getViewModel();
-        $httpStatus = isset($vm['error']) ? 422 : 201;
-        echo "[EnrollmentController] HTTP {$httpStatus} → " . json_encode($vm) . "\n";
-
-        return $vm ?? [];
-    }
-}
+use DesignPatterns\Architectural\CleanArchitecture\Course;
+use DesignPatterns\Architectural\CleanArchitecture\EnrollStudentInteractor;
+use DesignPatterns\Architectural\CleanArchitecture\EnrollmentController;
+use DesignPatterns\Architectural\CleanArchitecture\InMemoryCourseGateway;
+use DesignPatterns\Architectural\CleanArchitecture\InMemoryStudentGateway;
+use DesignPatterns\Architectural\CleanArchitecture\JsonEnrollmentPresenter;
+use DesignPatterns\Architectural\CleanArchitecture\Student;
 
 // ─────────────────────────────────────────────
 // FRAMEWORKS & DRIVERS — outermost ring (Composition Root)

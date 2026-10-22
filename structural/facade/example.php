@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * LARAVEL NOTE
  * ============
@@ -23,127 +25,29 @@
  *    coordination into a Facade and let the job just call one method.
  */
 
-// Subsystem: transcodes video to multiple resolutions
-class VideoTranscoder
-{
-    public function transcode(string $filePath, array $resolutions): array
-    {
-        $outputs = [];
-        foreach ($resolutions as $res) {
-            echo "[VideoTranscoder] Transcoding to {$res}p...\n";
-            $outputs[$res] = "/tmp/encoded_{$res}p.mp4";
-        }
-        return $outputs;
-    }
-}
+// ─── Pattern map ──────────────────────────────────────────────────────────────
+// This file only runs the demo. Read the classes in src/ in this order:
+//   src/VideoPublisher.php         Facade — one simple method that orchestrates the whole pipeline
+//   src/VideoTranscoder.php        Subsystems — complex pieces the client no longer talks to directly
+//   src/ThumbnailGenerator.php
+//   src/CdnUploader.php
+//   src/VideoMetadataRepository.php
+//   src/SubscriberNotifier.php
+//   src/ContentCreatorDashboard.php Client — only knows the facade
+// Executable guarantees of the pattern: tests/VideoPublisherTest.php
 
-// Subsystem: generates a thumbnail from a video frame
-class ThumbnailGenerator
-{
-    public function generate(string $filePath, int $atSecond): string
-    {
-        echo "[ThumbnailGenerator] Extracting frame at {$atSecond}s...\n";
-        return "/tmp/thumbnail.jpg";
-    }
-}
+require __DIR__ . '/../../vendor/autoload.php';
 
-// Subsystem: uploads files to the CDN and returns public URLs
-class CdnUploader
-{
-    public function upload(string $filePath, string $destinationKey): string
-    {
-        echo "[CdnUploader] Uploading {$filePath} → {$destinationKey}...\n";
-        return "https://cdn.example.com/{$destinationKey}";
-    }
-}
-
-// Subsystem: persists video metadata to the database
-class VideoMetadataRepository
-{
-    public function save(array $metadata): string
-    {
-        $videoId = uniqid('vid_');
-        echo "[VideoMetadataRepository] Saving metadata for \"{$metadata['title']}\" → ID: {$videoId}\n";
-        return $videoId;
-    }
-}
-
-// Subsystem: notifies channel subscribers of new content
-class SubscriberNotifier
-{
-    public function notify(string $channelId, string $title, string $videoUrl): void
-    {
-        echo "[SubscriberNotifier] Notifying subscribers of channel {$channelId} → \"{$title}\"\n";
-    }
-}
-
-// The Facade — hides the entire video publishing pipeline behind one method.
-// The client has no idea about encoding, CDN uploads, or push notifications.
-class VideoPublisher
-{
-    public function __construct(
-        private VideoTranscoder $transcoder,
-        private ThumbnailGenerator $thumbnailGenerator,
-        private CdnUploader $cdn,
-        private VideoMetadataRepository $repository,
-        private SubscriberNotifier $notifier
-    ) {}
-
-    public function publish(string $rawFilePath, string $title, string $channelId): string
-    {
-        echo "\n[VideoPublisher] Starting publish pipeline for \"{$title}\"...\n";
-
-        $encodedFiles = $this->transcoder->transcode($rawFilePath, [360, 720, 1080]);
-        $thumbnail    = $this->thumbnailGenerator->generate($rawFilePath, 5);
-
-        $cdnUrls = [];
-        foreach ($encodedFiles as $res => $file) {
-            $cdnUrls[$res] = $this->cdn->upload($file, "videos/{$channelId}/{$res}p.mp4");
-        }
-        $thumbnailUrl = $this->cdn->upload($thumbnail, "thumbnails/{$channelId}/thumb.jpg");
-
-        $videoId = $this->repository->save([
-            'title'         => $title,
-            'channel_id'    => $channelId,
-            'cdn_urls'      => $cdnUrls,
-            'thumbnail_url' => $thumbnailUrl,
-        ]);
-
-        $this->notifier->notify($channelId, $title, $cdnUrls[720]);
-
-        echo "[VideoPublisher] Pipeline complete. Video ID: {$videoId}\n";
-        return $videoId;
-    }
-
-    // matiz: a Facade can expose multiple methods at different levels of control.
-    // publishDraft() runs the same pipeline but skips subscriber notification,
-    // giving creators a way to review content before going live — without ever
-    // touching the subsystems directly. The facade provides simplicity by default
-    // and opt-in control when needed.
-    public function publishDraft(string $rawFilePath, string $title, string $channelId): string
-    {
-        echo "\n[VideoPublisher] Publishing as DRAFT — subscriber notification skipped...\n";
-        $this->transcoder->transcode($rawFilePath, [720]);
-        $videoId = $this->repository->save(['title' => $title, 'channel_id' => $channelId, 'status' => 'draft']);
-        echo "[VideoPublisher] Draft saved with ID: {$videoId}. Awaiting creator review.\n";
-        return $videoId;
-    }
-}
-
-// Client — knows nothing about encoding, CDN, or notifications.
-class ContentCreatorDashboard
-{
-    public function __construct(private VideoPublisher $publisher) {}
-
-    public function submitVideo(string $filePath, string $title, string $channelId): void
-    {
-        echo "[ContentCreatorDashboard] Creator submitted video: \"{$title}\"\n";
-        $videoId = $this->publisher->publish($filePath, $title, $channelId);
-        echo "[ContentCreatorDashboard] Video is live. ID: {$videoId}\n";
-    }
-}
+use DesignPatterns\Structural\Facade\CdnUploader;
+use DesignPatterns\Structural\Facade\ContentCreatorDashboard;
+use DesignPatterns\Structural\Facade\SubscriberNotifier;
+use DesignPatterns\Structural\Facade\ThumbnailGenerator;
+use DesignPatterns\Structural\Facade\VideoMetadataRepository;
+use DesignPatterns\Structural\Facade\VideoPublisher;
+use DesignPatterns\Structural\Facade\VideoTranscoder;
 
 // Bootstrap
+
 $publisher = new VideoPublisher(
     new VideoTranscoder(),
     new ThumbnailGenerator(),

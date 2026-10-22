@@ -18,12 +18,38 @@
     },
     "autoload": {
         "psr-4": {
-            "DesignPatterns\\Creational\\Singleton\\": "creational/singleton/src/"
+            "DesignPatterns\\Creational\\Singleton\\": "creational/singleton/src/",
+            "DesignPatterns\\Behavioral\\Strategy\\": "behavioral/strategy/src/",
+            "DesignPatterns\\Structural\\Adapter\\": "structural/adapter/src/",
+            "DesignPatterns\\Structural\\Decorator\\": "structural/decorator/src/",
+            "DesignPatterns\\Structural\\Facade\\": "structural/facade/src/",
+            "DesignPatterns\\Behavioral\\Observer\\": "behavioral/observer/src/",
+            "DesignPatterns\\Cloud\\Retry\\": "cloud/retry/src/",
+            "DesignPatterns\\Cloud\\CacheAside\\": "cloud/cache_aside/src/",
+            "DesignPatterns\\Concurrency\\ProducerConsumer\\": "concurrency/producer_consumer/src/",
+            "DesignPatterns\\Architectural\\Repository\\": "architectural/repository/src/",
+            "DesignPatterns\\Architectural\\Mvc\\": "architectural/mvc/src/",
+            "DesignPatterns\\Architectural\\Layered\\": "architectural/layered/src/",
+            "DesignPatterns\\Architectural\\Hexagonal\\": "architectural/hexagonal/src/",
+            "DesignPatterns\\Architectural\\CleanArchitecture\\": "architectural/clean_architecture/src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "DesignPatterns\\Tests\\Creational\\Singleton\\": "creational/singleton/tests/"
+            "DesignPatterns\\Tests\\Creational\\Singleton\\": "creational/singleton/tests/",
+            "DesignPatterns\\Tests\\Behavioral\\Strategy\\": "behavioral/strategy/tests/",
+            "DesignPatterns\\Tests\\Structural\\Adapter\\": "structural/adapter/tests/",
+            "DesignPatterns\\Tests\\Structural\\Decorator\\": "structural/decorator/tests/",
+            "DesignPatterns\\Tests\\Structural\\Facade\\": "structural/facade/tests/",
+            "DesignPatterns\\Tests\\Behavioral\\Observer\\": "behavioral/observer/tests/",
+            "DesignPatterns\\Tests\\Cloud\\Retry\\": "cloud/retry/tests/",
+            "DesignPatterns\\Tests\\Cloud\\CacheAside\\": "cloud/cache_aside/tests/",
+            "DesignPatterns\\Tests\\Concurrency\\ProducerConsumer\\": "concurrency/producer_consumer/tests/",
+            "DesignPatterns\\Tests\\Architectural\\Repository\\": "architectural/repository/tests/",
+            "DesignPatterns\\Tests\\Architectural\\Mvc\\": "architectural/mvc/tests/",
+            "DesignPatterns\\Tests\\Architectural\\Layered\\": "architectural/layered/tests/",
+            "DesignPatterns\\Tests\\Architectural\\Hexagonal\\": "architectural/hexagonal/tests/",
+            "DesignPatterns\\Tests\\Architectural\\CleanArchitecture\\": "architectural/clean_architecture/tests/"
         }
     }
 }

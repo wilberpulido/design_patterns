@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * LARAVEL NOTE
  * ============
@@ -19,101 +21,22 @@
  * 4. Export formats: CsvExporter, PdfExporter, XlsxExporter — same interface, different output.
  */
 
-// The Strategy interface — all shipping methods must implement this contract.
-interface ShippingStrategy
-{
-    public function calculateCost(float $weightKg, string $destination): float;
-    public function estimatedDays(): int;
-    public function label(): string;
-}
+// ─── Pattern map ──────────────────────────────────────────────────────────────
+// This file only runs the demo. Read the classes in src/ in this order:
+//   src/ShippingStrategy.php       Strategy — the interface every algorithm implements
+//   src/StandardShipping.php       Concrete strategies — interchangeable algorithms
+//   src/ExpressShipping.php
+//   src/InternationalShipping.php
+//   src/ShippingCalculator.php     Context — delegates to whichever strategy it holds;
+//                                  setStrategy() swaps it at runtime
+//   src/OrderCheckout.php          Client — chooses strategies and uses the context
+// Executable guarantees of the pattern: tests/ShippingCalculatorTest.php
 
-// Concrete Strategy: express delivery — fast but expensive
-class ExpressShipping implements ShippingStrategy
-{
-    public function calculateCost(float $weightKg, string $destination): float
-    {
-        echo "[ExpressShipping] Calculating express rate for {$weightKg}kg to {$destination}...\n";
-        return 15.00 + ($weightKg * 2.50);
-    }
+require __DIR__ . '/../../vendor/autoload.php';
 
-    public function estimatedDays(): int { return 1; }
-    public function label(): string { return 'Express (next day)'; }
-}
-
-// Concrete Strategy: standard delivery — balanced cost and speed
-class StandardShipping implements ShippingStrategy
-{
-    public function calculateCost(float $weightKg, string $destination): float
-    {
-        echo "[StandardShipping] Calculating standard rate for {$weightKg}kg to {$destination}...\n";
-        return 5.00 + ($weightKg * 0.80);
-    }
-
-    public function estimatedDays(): int { return 5; }
-    public function label(): string { return 'Standard (3-5 days)'; }
-}
-
-// Concrete Strategy: international — customs and longer transit
-class InternationalShipping implements ShippingStrategy
-{
-    public function calculateCost(float $weightKg, string $destination): float
-    {
-        echo "[InternationalShipping] Calculating international rate for {$weightKg}kg to {$destination}...\n";
-        return 25.00 + ($weightKg * 4.00);
-    }
-
-    public function estimatedDays(): int { return 14; }
-    public function label(): string { return 'International (10-14 days)'; }
-}
-
-// The Context — uses a ShippingStrategy without knowing which one it is.
-// It delegates the cost calculation entirely to the injected strategy.
-class ShippingCalculator
-{
-    public function __construct(private ShippingStrategy $strategy) {}
-
-    // matiz: the strategy can be swapped at runtime, not just at construction.
-    // This allows the same context object to behave differently as conditions change —
-    // for example, switching from standard to express if a product runs low on stock.
-    public function setStrategy(ShippingStrategy $strategy): void
-    {
-        echo "[ShippingCalculator] Switching strategy to: {$strategy->label()}\n";
-        $this->strategy = $strategy;
-    }
-
-    public function quote(float $weightKg, string $destination): array
-    {
-        $cost = $this->strategy->calculateCost($weightKg, $destination);
-        return [
-            'label'          => $this->strategy->label(),
-            'cost'           => $cost,
-            'estimated_days' => $this->strategy->estimatedDays(),
-        ];
-    }
-}
-
-// Client — selects a strategy based on user input and delegates to the calculator.
-class OrderCheckout
-{
-    public function __construct(private ShippingCalculator $calculator) {}
-
-    public function displayShippingOptions(string $product, float $weight, string $destination): void
-    {
-        echo "\n[OrderCheckout] Shipping options for \"{$product}\" ({$weight}kg → {$destination}):\n";
-
-        $strategies = [
-            new StandardShipping(),
-            new ExpressShipping(),
-            new InternationalShipping(),
-        ];
-
-        foreach ($strategies as $strategy) {
-            $this->calculator->setStrategy($strategy);
-            $quote = $this->calculator->quote($weight, $destination);
-            echo "[OrderCheckout] {$quote['label']}: \${$quote['cost']} ({$quote['estimated_days']} days)\n";
-        }
-    }
-}
+use DesignPatterns\Behavioral\Strategy\OrderCheckout;
+use DesignPatterns\Behavioral\Strategy\ShippingCalculator;
+use DesignPatterns\Behavioral\Strategy\StandardShipping;
 
 // Bootstrap
 $calculator = new ShippingCalculator(new StandardShipping());

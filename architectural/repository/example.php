@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * LARAVEL NOTE
  * ============
@@ -19,123 +21,24 @@
  *    repository implementation changes, the service is untouched.
  */
 
-// Domain object — a plain class with no ORM dependency
-class Product
-{
-    public function __construct(
-        public readonly int    $id,
-        public readonly string $name,
-        public readonly string $category,
-        public readonly float  $price,
-        public readonly bool   $active
-    ) {}
-}
+// ─── Pattern map ──────────────────────────────────────────────────────────────
+// This file only runs the demo. Read the classes in src/ in this order:
+//   src/Product.php                Domain entity
+//   src/ProductRepository.php      Repository interface — collection-like contract, no SQL
+//   src/MySqlProductRepository.php Implementations — swappable storage behind the same contract
+//   src/InMemoryProductRepository.php
+//   src/ProductCatalogService.php  Client — depends only on the interface
+// Executable guarantees of the pattern: tests/ProductCatalogServiceTest.php
 
-// The Repository interface — defined in domain terms, not database terms.
-// The service depends on this interface, never on a concrete implementation.
-interface ProductRepository
-{
-    public function findById(int $id): ?Product;
-    public function findByCategory(string $category): array;
-    public function findAllActive(): array;
-    public function save(Product $product): void;
-}
+require __DIR__ . '/../../vendor/autoload.php';
 
-// Concrete implementation: MySQL — simulates Eloquent or raw queries
-class MySqlProductRepository implements ProductRepository
-{
-    public function findById(int $id): ?Product
-    {
-        echo "[MySqlProductRepository] SELECT * FROM products WHERE id = {$id}\n";
-        return new Product($id, 'Wireless Keyboard', 'electronics', 79.99, true);
-    }
-
-    public function findByCategory(string $category): array
-    {
-        echo "[MySqlProductRepository] SELECT * FROM products WHERE category = '{$category}' AND active = 1\n";
-        return [
-            new Product(1, 'Wireless Keyboard', $category, 79.99, true),
-            new Product(2, 'USB Mouse',          $category, 29.99, true),
-        ];
-    }
-
-    public function findAllActive(): array
-    {
-        echo "[MySqlProductRepository] SELECT * FROM products WHERE active = 1\n";
-        return [
-            new Product(1, 'Wireless Keyboard', 'electronics', 79.99, true),
-            new Product(2, 'USB Mouse',          'electronics', 29.99, true),
-            new Product(3, 'Notebook',           'stationery',   4.99, true),
-        ];
-    }
-
-    public function save(Product $product): void
-    {
-        echo "[MySqlProductRepository] INSERT/UPDATE product '{$product->name}' in database\n";
-    }
-}
-
-// matiz: the InMemory implementation makes the service fully testable without a database.
-// In tests you inject InMemoryProductRepository — no migrations, no seeders, instant feedback.
-// This is the most immediate practical benefit of the Repository pattern.
-class InMemoryProductRepository implements ProductRepository
-{
-    private array $products = [];
-
-    public function findById(int $id): ?Product
-    {
-        echo "[InMemoryProductRepository] Looking up product #{$id} in memory...\n";
-        return $this->products[$id] ?? null;
-    }
-
-    public function findByCategory(string $category): array
-    {
-        echo "[InMemoryProductRepository] Filtering products by category '{$category}' in memory...\n";
-        return array_values(array_filter(
-            $this->products,
-            fn(Product $p) => $p->category === $category && $p->active
-        ));
-    }
-
-    public function findAllActive(): array
-    {
-        return array_values(array_filter($this->products, fn(Product $p) => $p->active));
-    }
-
-    public function save(Product $product): void
-    {
-        $this->products[$product->id] = $product;
-        echo "[InMemoryProductRepository] Saved '{$product->name}' in memory store.\n";
-    }
-}
-
-// The Service — uses the repository interface exclusively.
-// It has no idea whether data comes from MySQL, MongoDB, or memory.
-class ProductCatalogService
-{
-    public function __construct(private ProductRepository $repository) {}
-
-    public function getProductDetails(int $id): void
-    {
-        echo "\n[ProductCatalogService] Fetching product #{$id}...\n";
-        $product = $this->repository->findById($id);
-        if ($product) {
-            echo "[ProductCatalogService] Found: {$product->name} | {$product->category} | \${$product->price}\n";
-        } else {
-            echo "[ProductCatalogService] Product not found.\n";
-        }
-    }
-
-    public function listByCategory(string $category): void
-    {
-        echo "\n[ProductCatalogService] Listing products in '{$category}'...\n";
-        foreach ($this->repository->findByCategory($category) as $product) {
-            echo "[ProductCatalogService]   - {$product->name} (\${$product->price})\n";
-        }
-    }
-}
+use DesignPatterns\Architectural\Repository\InMemoryProductRepository;
+use DesignPatterns\Architectural\Repository\MySqlProductRepository;
+use DesignPatterns\Architectural\Repository\Product;
+use DesignPatterns\Architectural\Repository\ProductCatalogService;
 
 // Production: inject MySQL implementation
+
 echo "=== Production (MySQL) ===\n";
 $service = new ProductCatalogService(new MySqlProductRepository());
 $service->getProductDetails(1);

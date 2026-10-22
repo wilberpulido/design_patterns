@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * LARAVEL NOTE:
  *
@@ -19,89 +21,24 @@
  *   NotificationChannel interface to make them interchangeable.
  */
 
-// The target interface — what our application's payment module expects.
-// All payment logic talks to this contract, not to any specific provider.
-interface PaymentGateway
-{
-    public function charge(float $amount, string $currency, string $token): array;
-    public function refund(string $transactionId): bool;
-}
+// ─── Pattern map ──────────────────────────────────────────────────────────────
+// This file only runs the demo. Read the classes in src/ in this order:
+//   src/PaymentGateway.php         Target — the interface the client code expects
+//   src/LegacyPayPalClient.php     Adaptee — existing class with an incompatible API (cents, codes)
+//   src/PayPalAdapter.php          Adapter — implements the Target by translating to the Adaptee
+//   (below) processOrder()         Client — only knows PaymentGateway
+// Executable guarantees of the pattern: tests/PayPalAdapterTest.php
 
-// The adaptee — a legacy third-party PayPal client we cannot modify.
-// It has a completely different interface: different method names, different units,
-// different return types. This is the incompatible class we need to adapt.
-class LegacyPayPalClient
-{
-    // Expects amount in CENTS, not dollars — a common source of bugs without an adapter.
-    public function submitPaymentRequest(int $amountInCents, string $currencyCode, string $cardToken, string $description): string
-    {
-        echo "[LegacyPayPalClient] Submitting {$amountInCents} cents ({$currencyCode}) | token: {$cardToken}\n";
-        // Returns a raw PayPal transaction ID string.
-        return 'PPL-TXN-' . strtoupper(substr(md5($cardToken . $amountInCents), 0, 8));
-    }
+require __DIR__ . '/../../vendor/autoload.php';
 
-    public function cancelTransaction(string $txnId, string $reason): array
-    {
-        echo "[LegacyPayPalClient] Cancelling transaction {$txnId} | reason: {$reason}\n";
-        return ['status' => 'cancelled', 'txn_id' => $txnId];
-    }
-}
-
-// The Adapter — wraps LegacyPayPalClient and implements PaymentGateway.
-// This is an Object Adapter: it uses composition, not inheritance.
-class PayPalAdapter implements PaymentGateway
-{
-    // matiz: Composition over inheritance — by holding a reference to the adaptee
-    // instead of extending it, we can inject any LegacyPayPalClient (including mocks),
-    // and we avoid inheriting methods or state we don't want exposed.
-    private LegacyPayPalClient $paypal;
-
-    // Maps our internal transaction IDs to PayPal's IDs, so refund() can look them up.
-    private array $transactionMap = [];
-
-    public function __construct(LegacyPayPalClient $paypal)
-    {
-        $this->paypal = $paypal;
-    }
-
-    public function charge(float $amount, string $currency, string $token): array
-    {
-        echo "[PayPalAdapter] charge(\${$amount}, '{$currency}') — translating to LegacyPayPalClient...\n";
-
-        // Unit translation: our interface works in dollars, PayPal expects cents.
-        $amountInCents = (int) round($amount * 100);
-
-        $paypalTxnId = $this->paypal->submitPaymentRequest(
-            $amountInCents,
-            strtoupper($currency),
-            $token,
-            "Charge via adapter"
-        );
-
-        // Response normalization: translate PayPal's raw string into our standard array format.
-        $internalTxnId = 'TXN-' . uniqid();
-        $this->transactionMap[$internalTxnId] = $paypalTxnId;
-
-        echo "[PayPalAdapter] Charge complete. Internal: {$internalTxnId} → PayPal: {$paypalTxnId}\n";
-
-        return ['transaction_id' => $internalTxnId, 'status' => 'success', 'amount' => $amount];
-    }
-
-    public function refund(string $transactionId): bool
-    {
-        echo "[PayPalAdapter] refund('{$transactionId}') — translating to LegacyPayPalClient...\n";
-
-        // Look up the PayPal transaction ID that corresponds to our internal ID.
-        $paypalTxnId = $this->transactionMap[$transactionId] ?? $transactionId;
-        $result = $this->paypal->cancelTransaction($paypalTxnId, "Customer refund request");
-
-        return $result['status'] === 'cancelled';
-    }
-}
+use DesignPatterns\Structural\Adapter\LegacyPayPalClient;
+use DesignPatterns\Structural\Adapter\PayPalAdapter;
+use DesignPatterns\Structural\Adapter\PaymentGateway;
 
 // Client code — only knows about PaymentGateway.
 // It has zero knowledge of PayPal, cents conversion, or callback formats.
 // This is the key benefit: business logic is decoupled from the payment provider.
+
 function processOrder(PaymentGateway $gateway, float $amount, string $currency, string $token): void
 {
     echo "\n[OrderService] Processing order — \${$amount} {$currency}...\n";

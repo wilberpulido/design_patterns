@@ -18,7 +18,9 @@ Each pattern folder contains exactly these files:
 
 ```
 <category>/<pattern_name>/
-├── example.php
+├── src/              # PHP classes, one type per file (PSR-4)
+├── tests/            # PHPUnit tests for the PHP classes
+├── example.php       # demo only: requires the autoloader and runs the scenario
 ├── example.py
 ├── example.java
 ├── example.go
@@ -26,11 +28,41 @@ Each pattern folder contains exactly these files:
 └── notes.md
 ```
 
+## PHP structure (Composer + PSR-4 + PHPUnit)
+
+PHP is the only language with unit tests; the other four are checked by the CI smoke run.
+
+- **One class/interface/enum per file** in `src/`, file name = type name.
+- Every PHP file starts with `declare(strict_types=1);` (including `example.php` and tests).
+- **Namespace**: `DesignPatterns\<Category>\<Pattern>` (StudlyCase of the folder names),
+  e.g. `cloud/cache_aside` → `DesignPatterns\Cloud\CacheAside`.
+  Tests use `DesignPatterns\Tests\<Category>\<Pattern>`.
+- Inside a namespace, reference PHP built-ins with a leading backslash (`\RuntimeException`) or a `use`.
+- **Every new pattern must add two PSR-4 entries** to `composer.json` (PSR-4 has no wildcards),
+  then run `composer dump-autoload`:
+  - `autoload`: `"DesignPatterns\\<Category>\\<Pattern>\\": "<category>/<pattern>/src/"`
+  - `autoload-dev`: `"DesignPatterns\\Tests\\<Category>\\<Pattern>\\": "<category>/<pattern>/tests/"`
+- `phpunit.xml` already globs `*/*/tests` and `*/*/src` — no edit needed per pattern.
+- `example.php` keeps the Laravel note and scenario docblock on top, then a
+  `// ─── Pattern map ───` comment block, then `require __DIR__ . '/../../vendor/autoload.php';`,
+  the `use` statements (only the ones the demo uses), and the demo.
+- The **Pattern map** lists the `src/` files in reading order with their role in the pattern
+  (e.g. Strategy / Concrete strategies / Context / Client; for architectural patterns, grouped by
+  layer, ring or port), and ends with the test file. Since the classes no longer live in
+  `example.php`, the map is what keeps the example readable on its own.
+- Comments that explain the demo (wiring order, composition root, client role) stay right above
+  the demo code they describe, not above the `require`.
+- Tests: 1–3 per pattern, covering the behavior that **defines** the pattern. Each test class
+  declares `#[CoversClass(...)]` and every test that triggers narration declares it with
+  `expectOutputRegex(...)` (phpunit.xml is strict about coverage metadata and output).
+- Run: `vendor/bin/phpunit` (all) or `vendor/bin/phpunit <category>/<pattern>/tests`.
+- `example.php` must exit with code 0: the CI smoke job runs every example.
+
 ## Languages
 
 Every pattern is implemented in 5 languages:
 
-- PHP (`example.php`)
+- PHP (`example.php` + `src/` + `tests/`)
 - Python (`example.py`)
 - Java (`example.java`)
 - Go (`example.go`)

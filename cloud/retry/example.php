@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Laravel note:
  *
@@ -18,102 +20,22 @@
  *   that go beyond what the built-in helpers offer.
  */
 
-// ─── Exceptions ───────────────────────────────────────────────────────────────
-// Distinguishing exception types is what allows the executor to decide
-// whether to retry or abort immediately.
+// ─── Pattern map ──────────────────────────────────────────────────────────────
+// This file only runs the demo. Read the classes in src/ in this order:
+//   src/TransientException.php     Error classification — transient = retry, permanent = abort
+//   src/PermanentException.php
+//   src/RetryPolicy.php            Policy — max attempts and exponential backoff delays
+//   src/RetryExecutor.php          Executor — the retry loop, wraps ANY callable
+//   src/StripeGateway.php          Flaky remote dependency (simulated failures)
+// Executable guarantees of the pattern: tests/RetryExecutorTest.php
 
-class TransientException extends \RuntimeException {}  // temporary — worth retrying
-class PermanentException extends \RuntimeException {}  // permanent — retrying won't help
+require __DIR__ . '/../../vendor/autoload.php';
 
-// ─── Retry Policy ─────────────────────────────────────────────────────────────
-
-class RetryPolicy
-{
-    public function __construct(
-        public readonly int   $maxAttempts       = 3,
-        public readonly int   $baseDelayMs       = 100,
-        public readonly float $backoffMultiplier = 2.0
-    ) {}
-
-    // Delay grows exponentially: 100ms → 200ms → 400ms
-    public function delayMs(int $attempt): int
-    {
-        return (int) ($this->baseDelayMs * ($this->backoffMultiplier ** ($attempt - 1)));
-    }
-}
-
-// ─── Retry Executor ───────────────────────────────────────────────────────────
-// The executor is generic — it knows nothing about payments or HTTP.
-// Any callable can be wrapped and retried with the same logic.
-
-class RetryExecutor
-{
-    public function __construct(private RetryPolicy $policy) {}
-
-    public function execute(callable $operation): mixed
-    {
-        $attempt = 1;
-
-        while (true) {
-            try {
-                echo "[RetryExecutor] Attempt {$attempt}/{$this->policy->maxAttempts}...\n";
-                $result = $operation();
-                echo "[RetryExecutor] Success on attempt {$attempt}.\n";
-                return $result;
-
-            } catch (TransientException $e) {
-                if ($attempt >= $this->policy->maxAttempts) {
-                    echo "[RetryExecutor] All {$this->policy->maxAttempts} attempts exhausted. Giving up.\n";
-                    throw $e;
-                }
-                $delay = $this->policy->delayMs($attempt);
-                echo "[RetryExecutor] Transient failure: \"{$e->getMessage()}\". Retrying in {$delay}ms...\n";
-                usleep($delay * 1000);
-                $attempt++;
-
-            } catch (PermanentException $e) {
-                // matiz: non-retryable errors must abort immediately — no delay, no further attempts.
-                // Retrying a "card declined" or "invalid credentials" error wastes time
-                // and could lock accounts or trigger fraud detection.
-                echo "[RetryExecutor] Permanent failure: \"{$e->getMessage()}\". Aborting immediately.\n";
-                throw $e;
-            }
-        }
-    }
-}
-
-// ─── Payment Gateway ──────────────────────────────────────────────────────────
-// Simulates a flaky payment provider that times out under load.
-
-class StripeGateway
-{
-    private int $remainingFailures;
-
-    public function __construct(int $simulatedFailures = 0)
-    {
-        $this->remainingFailures = $simulatedFailures;
-    }
-
-    public function charge(string $cardToken, float $amount): string
-    {
-        echo "[StripeGateway] Charging \${$amount} on token {$cardToken}...\n";
-
-        if ($this->remainingFailures > 0) {
-            $this->remainingFailures--;
-            throw new TransientException("Connection timeout to Stripe API");
-        }
-
-        $txnId = 'txn_' . strtoupper(substr(md5($cardToken . microtime()), 0, 10));
-        echo "[StripeGateway] Charge approved. Transaction ID: {$txnId}\n";
-        return $txnId;
-    }
-
-    public function chargeDeclinedCard(string $cardToken, float $amount): string
-    {
-        echo "[StripeGateway] Charging \${$amount} on token {$cardToken}...\n";
-        throw new PermanentException("Card declined: insufficient funds (do not retry)");
-    }
-}
+use DesignPatterns\Cloud\Retry\PermanentException;
+use DesignPatterns\Cloud\Retry\RetryExecutor;
+use DesignPatterns\Cloud\Retry\RetryPolicy;
+use DesignPatterns\Cloud\Retry\StripeGateway;
+use DesignPatterns\Cloud\Retry\TransientException;
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
