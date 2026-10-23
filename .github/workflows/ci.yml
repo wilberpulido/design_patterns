@@ -1,8 +1,14 @@
 name: CI
 
-# When the workflow runs: on every push to any branch and on every pull request.
+# When the workflow runs:
+# - push, only to main: the run after each merge (the one the README badge shows).
+# - pull_request: every PR to any branch. It tests the PR merged with its base branch,
+#   which is what will actually land.
+# matiz: with an unfiltered `push`, every push to a branch with an open PR ran CI twice
+# (once per event). The trade-off: a branch without a PR gets no CI until the PR is opened.
 on:
   push:
+    branches: [main]
   pull_request:
 
 # Least privilege: the jobs only need to read the repository.
