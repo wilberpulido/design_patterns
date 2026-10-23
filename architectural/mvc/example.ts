@@ -9,16 +9,22 @@
 // The model holds data and enforces business rules.
 // It has no knowledge of how data will be displayed.
 
-class Movie {
-    constructor(id, title, year, genre) {
-        this.id      = id;
-        this.title   = title;
-        this.year    = year;
-        this.genre   = genre;
-        this.ratings = [];
-    }
+interface Rating {
+    user: string;
+    score: number;
+}
 
-    addRating(user, score) {
+class Movie {
+    readonly ratings: Rating[] = [];
+
+    constructor(
+        readonly id: number,
+        readonly title: string,
+        readonly year: number,
+        readonly genre: string,
+    ) {}
+
+    addRating(user: string, score: number): void {
         // Business rule: valid score range. The controller delegates here.
         if (score < 1 || score > 10) {
             throw new Error(`Rating must be between 1 and 10, got ${score}`);
@@ -26,7 +32,8 @@ class Movie {
         this.ratings.push({ user, score });
     }
 
-    averageRating() {
+    // `number | null`: the return type forces every caller to handle "no ratings yet".
+    averageRating(): number | null {
         if (this.ratings.length === 0) return null;
         return this.ratings.reduce((sum, r) => sum + r.score, 0) / this.ratings.length;
     }
@@ -38,30 +45,29 @@ class Movie {
 // (e.g. adding async findById() that queries Postgres) only changes the store,
 // not the Movie class and not the controller's interface.
 class MovieStore {
-    constructor() {
-        this._movies = new Map();
-        this._nextId = 1;
-    }
+    private readonly movies = new Map<number, Movie>();
+    private nextId = 1;
 
-    add(title, year, genre) {
-        const movie = new Movie(this._nextId++, title, year, genre);
-        this._movies.set(movie.id, movie);
+    add(title: string, year: number, genre: string): Movie {
+        const movie = new Movie(this.nextId++, title, year, genre);
+        this.movies.set(movie.id, movie);
         return movie;
     }
 
-    findById(id)       { return this._movies.get(id) ?? null; }
-    findAll()          { return [...this._movies.values()]; }
+    findById(id: number): Movie | null { return this.movies.get(id) ?? null; }
+    findAll(): Movie[]                 { return [...this.movies.values()]; }
 
-    findByGenre(genre) {
+    findByGenre(genre: string): Movie[] {
         return this.findAll().filter(
             m => m.genre.toLowerCase() === genre.toLowerCase()
         );
     }
 
-    topRated(n = 5) {
+    topRated(n = 5): Movie[] {
         return this.findAll()
             .filter(m => m.averageRating() !== null)
-            .sort((a, b) => b.averageRating() - a.averageRating())
+            // `!`: the filter above already dropped the movies without ratings.
+            .sort((a, b) => b.averageRating()! - a.averageRating()!)
             .slice(0, n);
     }
 }
@@ -69,7 +75,7 @@ class MovieStore {
 // ─── View ─────────────────────────────────────────────────────────────────────
 
 class MovieView {
-    renderList(movies, title) {
+    renderList(movies: Movie[], title: string): void {
         console.log(`\n┌─ ${title} (${movies.length} movies)`);
         if (movies.length === 0) {
             console.log('│  (no movies)');
@@ -82,7 +88,7 @@ class MovieView {
         console.log('└─');
     }
 
-    renderMovie(movie) {
+    renderMovie(movie: Movie): void {
         const avg = movie.averageRating();
         console.log(`\n┌─ Movie Detail`);
         console.log(`│  Title:   ${movie.title} (${movie.year})`);
@@ -97,11 +103,11 @@ class MovieView {
         console.log('└─');
     }
 
-    renderRatingAdded(movie, user, score) {
+    renderRatingAdded(movie: Movie, user: string, score: number): void {
         console.log(`[MovieView] ${user} rated "${movie.title}" ${score}/10`);
     }
 
-    renderError(message) {
+    renderError(message: string): void {
         console.log(`[MovieView] ERROR: ${message}`);
     }
 }
@@ -112,22 +118,22 @@ class MovieView {
 // It contains no formatting logic and no score-calculation logic.
 
 class MovieController {
-    constructor(store, view) {
-        this.store = store;
-        this.view  = view;
-    }
+    constructor(
+        private readonly store: MovieStore,
+        private readonly view: MovieView,
+    ) {}
 
-    listAll() {
+    listAll(): void {
         console.log('[MovieController] Handling: list all movies');
         this.view.renderList(this.store.findAll(), 'All Movies');
     }
 
-    listByGenre(genre) {
+    listByGenre(genre: string): void {
         console.log(`[MovieController] Handling: list genre '${genre}'`);
         this.view.renderList(this.store.findByGenre(genre), `Genre: ${genre}`);
     }
 
-    showDetail(id) {
+    showDetail(id: number): void {
         console.log(`[MovieController] Handling: show movie #${id}`);
         const movie = this.store.findById(id);
         if (!movie) {
@@ -137,7 +143,7 @@ class MovieController {
         this.view.renderMovie(movie);
     }
 
-    addRating(movieId, user, score) {
+    addRating(movieId: number, user: string, score: number): void {
         console.log(`[MovieController] Handling: add rating — movie #${movieId} by ${user}`);
         const movie = this.store.findById(movieId);
         if (!movie) {
@@ -148,11 +154,12 @@ class MovieController {
             movie.addRating(user, score); // business rule enforced by the model
             this.view.renderRatingAdded(movie, user, score);
         } catch (err) {
-            this.view.renderError(err.message);
+            // Strict mode types a caught value as `unknown`: narrow it before using .message.
+            this.view.renderError(err instanceof Error ? err.message : String(err));
         }
     }
 
-    topRated(n = 5) {
+    topRated(n = 5): void {
         console.log(`[MovieController] Handling: top ${n} rated movies`);
         this.view.renderList(this.store.topRated(n), `Top ${n} Rated`);
     }

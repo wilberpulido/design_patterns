@@ -134,6 +134,9 @@ jobs:
         run: bash .github/scripts/run-examples.sh example.java bash "$GITHUB_WORKSPACE/.github/scripts/run-java.sh"
 
   typescript:
+    # matiz: "/JS" is a leftover from when some patterns shipped example.js. The name stays
+    # because the ruleset on main requires this check BY NAME: renaming it would leave every
+    # PR waiting forever for a check that never reports. Rename only together with the ruleset.
     name: TypeScript/JS examples (smoke run)
     runs-on: ubuntu-latest
     steps:
@@ -146,7 +149,3 @@ jobs:
       - run: npm install --global typescript@5 ts-node@10
       - name: Run every example.ts
         run: bash .github/scripts/run-examples.sh example.ts ts-node
-      # matiz: 7 patterns still ship example.js instead of example.ts (pending migration);
-      # running them with node keeps them covered until they are ported.
-      - name: Run every example.js
-        run: bash .github/scripts/run-examples.sh example.js node

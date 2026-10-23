@@ -15,7 +15,6 @@ EXAMPLE_python     = python python example.py
 EXAMPLE_go         = go go run example.go
 EXAMPLE_java       = java bash /app/.github/scripts/run-java.sh example.java
 EXAMPLE_typescript = typescript ts-node example.ts
-EXAMPLE_js         = typescript node example.js
 
 .PHONY: help build install test lint format examples example ci shell-%
 
@@ -50,10 +49,9 @@ examples: ## Run every example in the 5 languages (javac -Werror included)
 	$(RUN) go $(EXAMPLES) example.go go run
 	$(RUN) java $(EXAMPLES) example.java bash /app/.github/scripts/run-java.sh
 	$(RUN) typescript $(EXAMPLES) example.ts ts-node
-	$(RUN) typescript $(EXAMPLES) example.js node
 
 example: ## Run one example, e.g. make example P=behavioral/strategy L=python
-	@[ -n "$(P)" ] && [ -n "$(EXAMPLE_$(L))" ] || { echo "Usage: make example P=<category>/<pattern> L=<php|python|go|java|typescript|js>"; exit 1; }
+	@[ -n "$(P)" ] && [ -n "$(EXAMPLE_$(L))" ] || { echo "Usage: make example P=<category>/<pattern> L=<php|python|go|java|typescript>"; exit 1; }
 	@[ -f "$(P)/$(lastword $(EXAMPLE_$(L)))" ] || { echo "Not found: $(P)/$(lastword $(EXAMPLE_$(L)))"; exit 1; }
 	$(RUN) -w /app/$(P) $(EXAMPLE_$(L))
 

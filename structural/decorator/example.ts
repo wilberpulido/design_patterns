@@ -1,37 +1,47 @@
 /**
- * DECORATOR PATTERN - Node.js
+ * DECORATOR PATTERN - TypeScript
  * Scenario: Content publishing pipeline — sanitization, markdown rendering,
  * and read-time estimation applied as decorators to a core article renderer.
  */
 
-// The base contract — every renderer and decorator must implement render()
-class ArticleRenderer {
-    render(article) {
-        throw new Error('render() must be implemented');
-    }
+interface Article {
+    title: string;
+    body: string;
+}
+
+interface RenderedArticle {
+    title: string;
+    body: string;
+    readTime?: string; // only present when ReadTimeDecorator is in the chain
+}
+
+// The base contract — every renderer and decorator must implement render().
+// An interface instead of a throwing base class: a missing render() is now a compile error.
+interface ArticleRenderer {
+    render(article: Article): RenderedArticle;
 }
 
 // Core renderer: returns the article as-is, with no processing.
 // It doesn't know about markdown, sanitization, or read time.
-class RawRenderer extends ArticleRenderer {
-    render(article) {
+class RawRenderer implements ArticleRenderer {
+    render(article: Article): RenderedArticle {
         console.log(`[RawRenderer] Rendering article: "${article.title}"`);
         return { title: article.title, body: article.body };
     }
 }
 
 // Base decorator: holds a reference to the next renderer in the chain.
-class RendererDecorator extends ArticleRenderer {
-    constructor(wrapped) {
-        super();
-        this.wrapped = wrapped;
-    }
+// abstract: it IS-A renderer (so decorators stack) but can't be instantiated on its own.
+abstract class RendererDecorator implements ArticleRenderer {
+    constructor(protected readonly wrapped: ArticleRenderer) {}
+
+    abstract render(article: Article): RenderedArticle;
 }
 
 class SanitizationDecorator extends RendererDecorator {
-    render(article) {
+    render(article: Article): RenderedArticle {
         console.log('[SanitizationDecorator] Stripping dangerous HTML tags...');
-        const sanitized = {
+        const sanitized: Article = {
             ...article,
             // Remove <script> tags and inline event handlers — XSS prevention
             body: article.body
@@ -45,9 +55,9 @@ class SanitizationDecorator extends RendererDecorator {
 }
 
 class MarkdownDecorator extends RendererDecorator {
-    render(article) {
+    render(article: Article): RenderedArticle {
         console.log('[MarkdownDecorator] Parsing markdown syntax...');
-        const rendered = {
+        const rendered: Article = {
             ...article,
             // Simulated markdown conversion — production would use a full parser (marked, remark)
             body: article.body
@@ -61,7 +71,7 @@ class MarkdownDecorator extends RendererDecorator {
 }
 
 class ReadTimeDecorator extends RendererDecorator {
-    render(article) {
+    render(article: Article): RenderedArticle {
         // Average reading speed: ~200 words per minute
         const wordCount = article.body.split(/\s+/).filter(Boolean).length;
         const minutes = Math.ceil(wordCount / 200);
@@ -76,14 +86,15 @@ class ReadTimeDecorator extends RendererDecorator {
 // HOF decorators are simpler when the object has a single method or is a plain function.
 // Class-based decorators are better when the interface has multiple methods or requires state.
 // Here we show both styles: class-based above, HOF-based below for caching.
-function withCaching(renderer) {
-    const cache = new Map();
+function withCaching(renderer: ArticleRenderer): ArticleRenderer {
+    const cache = new Map<string, RenderedArticle>();
     return {
-        render(article) {
+        render(article: Article): RenderedArticle {
             const key = article.title;
             if (cache.has(key)) {
                 console.log(`[CachingDecorator] Cache HIT for "${key}" — skipping full pipeline.`);
-                return cache.get(key);
+                // `!`: has() was just checked, but TypeScript can't link has() to get().
+                return cache.get(key)!;
             }
             console.log(`[CachingDecorator] Cache MISS for "${key}" — running pipeline.`);
             const result = renderer.render(article);
@@ -106,9 +117,9 @@ const pipeline = withCaching(
     )
 );
 
-console.log('=== Decorator Pattern Demo — Content Publishing Pipeline (Node.js) ===\n');
+console.log('=== Decorator Pattern Demo — Content Publishing Pipeline (TypeScript) ===\n');
 
-const article = {
+const article: Article = {
     title: 'Getting Started with Node.js',
     body: '# Introduction\n\n' +
           'This is a **beginner** guide. <script>alert("xss")</script>\n\n' +

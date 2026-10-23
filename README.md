@@ -31,7 +31,7 @@ The remaining folders are placeholders for patterns still to come.
 ├── example.py
 ├── example.java
 ├── example.go
-├── example.ts    # some patterns still ship example.js
+├── example.ts    # run with ts-node (strict type-check)
 └── notes.md      # problem, solution, when (not) to use, Q&A
 ```
 
@@ -44,7 +44,7 @@ pinned to the same versions as CI. The `Makefile` wraps the usual commands:
 make build      # build/pull the 5 images (first time only)
 make install    # composer install
 make ci         # lint + tests + every example, the same checks CI runs
-make example P=behavioral/strategy L=python   # one example (L: php, python, go, java, typescript, js)
+make example P=behavioral/strategy L=python   # one example (L: php, python, go, java, typescript)
 make help       # list every target (test, lint, format, examples, shell-<language>)
 ```
 
@@ -94,7 +94,7 @@ push to `main`, with one job per language on its own fresh VM:
 | Python | ruff format + ruff check | every `example.py` |
 | Go | gofmt + go vet | every `example.go` |
 | Java | javac `-Xlint:all -Werror` | compile + run every `example.java` |
-| TypeScript | type-check (strict) via ts-node | every `example.ts` / `example.js` |
+| TypeScript | type-check (strict) via ts-node | every `example.ts` |
 
 A job fails as soon as any command exits with a non-zero code, and all examples are run
 before failing, so one run reports every broken example.

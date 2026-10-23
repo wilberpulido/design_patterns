@@ -4,12 +4,44 @@
 // when its content changes: a cursor tracker, an auto-save service,
 // and a conflict detector. Each reacts independently.
 
+// ─── Events ───────────────────────────────────────────────────────────────────
+// Each event type carries its own payload shape.
+
+interface EditPayload {
+    userId: string;
+    position: number;
+    text: string;
+    before: string;
+    after: string;
+}
+
+interface CursorPayload {
+    userId: string;
+    position: number;
+}
+
+// matiz: a union of [eventType, payload] tuples ties each event name to ITS payload.
+// Inside onEvent, checking `eventType === 'edit'` narrows `payload` to EditPayload
+// automatically — no casts, and emitting 'cursor' with an edit payload won't compile.
+type DocumentEvent =
+    | ['edit', EditPayload]
+    | ['cursor', CursorPayload];
+
+type EventType = DocumentEvent[0]; // 'edit' | 'cursor'
+
+// The observer contract: the subject only knows this method exists.
+interface DocumentObserver {
+    onEvent(...[eventType, payload]: DocumentEvent): void;
+}
+
 // ─── Subject ──────────────────────────────────────────────────────────────────
 // SharedDocument is the subject. It holds content and notifies observers
 // whenever a user makes a change. It knows nothing about how observers react.
+// matiz: `#field` is JavaScript's runtime-private field (inaccessible even with a cast),
+// while TypeScript's `private` is checked only at compile time and erased afterwards.
 class SharedDocument {
-    #content;
-    #observers = new Map(); // eventType → Set of observers
+    #content: string;
+    #observers = new Map<EventType, Set<DocumentObserver>>();
 
     constructor(initialContent = '') {
         this.#content = initialContent;
@@ -18,33 +50,34 @@ class SharedDocument {
     // matiz: using event types (not a single generic "update") lets observers
     // subscribe to only the events they care about — a targeted Observer variant.
     // This avoids observers receiving irrelevant events and filtering internally.
-    on(eventType, observer) {
+    on(eventType: EventType, observer: DocumentObserver): void {
         if (!this.#observers.has(eventType)) {
             this.#observers.set(eventType, new Set());
         }
-        this.#observers.get(eventType).add(observer);
+        this.#observers.get(eventType)!.add(observer);
         console.log(`[SharedDocument] Observer subscribed to "${eventType}": ${observer.constructor.name}`);
     }
 
-    off(eventType, observer) {
+    off(eventType: EventType, observer: DocumentObserver): void {
         this.#observers.get(eventType)?.delete(observer);
         console.log(`[SharedDocument] Observer removed from "${eventType}": ${observer.constructor.name}`);
     }
 
     // Emit notifies only observers registered for this specific event type.
-    #emit(eventType, payload) {
+    #emit(...event: DocumentEvent): void {
+        const [eventType] = event;
         const subs = this.#observers.get(eventType);
         if (!subs || subs.size === 0) return;
 
         console.log(`[SharedDocument] Emitting "${eventType}" to ${subs.size} observer(s)...`);
         for (const observer of subs) {
-            observer.onEvent(eventType, payload);
+            observer.onEvent(...event);
         }
     }
 
     // ── Public actions that trigger notifications ──────────────────────────────
 
-    applyEdit(userId, position, text) {
+    applyEdit(userId: string, position: number, text: string): void {
         const before = this.#content;
         this.#content =
             this.#content.slice(0, position) + text + this.#content.slice(position);
@@ -54,12 +87,12 @@ class SharedDocument {
         this.#emit('edit', { userId, position, text, before, after: this.#content });
     }
 
-    moveCursor(userId, position) {
+    moveCursor(userId: string, position: number): void {
         console.log(`\n[SharedDocument] User "${userId}" moved cursor to ${position}`);
         this.#emit('cursor', { userId, position });
     }
 
-    getContent() {
+    getContent(): string {
         return this.#content;
     }
 }
@@ -68,11 +101,11 @@ class SharedDocument {
 // Each observer implements onEvent(type, payload).
 // They decide which event types they care about.
 
-class AutoSaveService {
+class AutoSaveService implements DocumentObserver {
     #pendingChanges = 0;
     #saveThreshold = 3;
 
-    onEvent(eventType, payload) {
+    onEvent(...[eventType, payload]: DocumentEvent): void {
         if (eventType !== 'edit') return;
 
         this.#pendingChanges++;
@@ -83,18 +116,18 @@ class AutoSaveService {
         }
     }
 
-    #flush() {
+    #flush(): void {
         console.log(`[AutoSave] Threshold reached — persisting document to storage...`);
         console.log(`[AutoSave] Document saved successfully.`);
         this.#pendingChanges = 0;
     }
 }
 
-class CursorTracker {
+class CursorTracker implements DocumentObserver {
     // Tracks where each user's cursor is for the "user presence" feature.
-    #cursors = new Map();
+    #cursors = new Map<string, number>();
 
-    onEvent(eventType, payload) {
+    onEvent(...[eventType, payload]: DocumentEvent): void {
         if (eventType === 'cursor') {
             this.#cursors.set(payload.userId, payload.position);
             console.log(`[CursorTracker] ${payload.userId} → position ${payload.position}`);
@@ -103,13 +136,14 @@ class CursorTracker {
 
         if (eventType === 'edit') {
             // When a user edits, their cursor implicitly advances.
+            // payload is EditPayload here, so `.text` is available.
             const newPos = payload.position + payload.text.length;
             this.#cursors.set(payload.userId, newPos);
             console.log(`[CursorTracker] ${payload.userId} cursor advanced to ${newPos} after edit`);
         }
     }
 
-    #renderPresence() {
+    #renderPresence(): void {
         const presence = [...this.#cursors.entries()]
             .map(([user, pos]) => `${user}@${pos}`)
             .join(', ');
@@ -117,14 +151,14 @@ class CursorTracker {
     }
 }
 
-class ConflictDetector {
+class ConflictDetector implements DocumentObserver {
     // matiz: detecting conflicts requires memory of previous edits.
     // The observer accumulates state across events — it's not stateless.
     // This shows that observers can be stateful without complicating the subject.
-    #recentEdits = [];
+    #recentEdits: (EditPayload & { timestamp: number })[] = [];
     #conflictWindowMs = 500;
 
-    onEvent(eventType, payload) {
+    onEvent(...[eventType, payload]: DocumentEvent): void {
         if (eventType !== 'edit') return;
 
         const now = Date.now();
@@ -149,7 +183,7 @@ class ConflictDetector {
         this.#recentEdits.push({ ...payload, timestamp: now });
     }
 
-    #notifyConflict(user1, user2) {
+    #notifyConflict(user1: string, user2: string): void {
         console.log(`[ConflictDetector] Sending conflict warning to ${user1} and ${user2}...`);
     }
 }
