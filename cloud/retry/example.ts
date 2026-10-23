@@ -8,14 +8,14 @@
 // ─── Error types ──────────────────────────────────────────────────────────────
 
 class TransientError extends Error {
-  constructor(msg) {
+  constructor(msg: string) {
     super(msg);
     this.name = "TransientError";
   }
 }
 
 class PermanentError extends Error {
-  constructor(msg) {
+  constructor(msg: string) {
     super(msg);
     this.name = "PermanentError";
   }
@@ -23,18 +23,28 @@ class PermanentError extends Error {
 
 // ─── Retry Policy ─────────────────────────────────────────────────────────────
 
+interface RetryOptions {
+  maxAttempts?: number;
+  baseDelayMs?: number;
+  backoffMultiplier?: number;
+}
+
 class RetryPolicy {
+  readonly maxAttempts: number;
+  readonly baseDelayMs: number;
+  readonly backoffMultiplier: number;
+
   constructor({
     maxAttempts = 3,
     baseDelayMs = 100,
     backoffMultiplier = 2.0,
-  } = {}) {
+  }: RetryOptions = {}) {
     this.maxAttempts = maxAttempts;
     this.baseDelayMs = baseDelayMs;
     this.backoffMultiplier = backoffMultiplier;
   }
 
-  delayMs(attempt) {
+  delayMs(attempt: number): number {
     // 100ms → 200ms → 400ms
     return this.baseDelayMs * Math.pow(this.backoffMultiplier, attempt - 1);
   }
@@ -46,11 +56,11 @@ class RetryPolicy {
 // sleep delay. The caller's code stays clean — it just awaits executor.execute(fn).
 
 class RetryExecutor {
-  constructor(policy) {
-    this.policy = policy;
-  }
+  constructor(private readonly policy: RetryPolicy) {}
 
-  async execute(operation) {
+  // Generic: execute() returns whatever the operation resolves to, so the caller keeps
+  // the real type (Forecast here) instead of getting `any` back.
+  async execute<T>(operation: () => Promise<T>): Promise<T> {
     for (let attempt = 1; ; attempt++) {
       console.log(
         `[RetryExecutor] Attempt ${attempt}/${this.policy.maxAttempts}...`,
@@ -77,7 +87,7 @@ class RetryExecutor {
 
         const delay = this.policy.delayMs(attempt);
         console.log(
-          `[RetryExecutor] Transient failure: "${err.message}". Retrying in ${delay}ms...`,
+          `[RetryExecutor] Transient failure: "${errorMessage(err)}". Retrying in ${delay}ms...`,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
@@ -85,15 +95,32 @@ class RetryExecutor {
   }
 }
 
+// matiz: in strict mode a caught value is `unknown`, not `Error` — JavaScript can
+// `throw` anything (a string, a number). Narrow it before reading `.message`.
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 // ─── Weather API Client ───────────────────────────────────────────────────────
 
+interface Forecast {
+  city: string;
+  temp: number;
+  condition: string;
+  humidity: number;
+}
+
 class WeatherApiClient {
-  constructor(apiKey, simulatedFailures = 0) {
-    this.apiKey = apiKey;
+  private remainingFailures: number;
+
+  constructor(
+    private readonly apiKey: string,
+    simulatedFailures = 0,
+  ) {
     this.remainingFailures = simulatedFailures;
   }
 
-  async fetchForecast(city) {
+  async fetchForecast(city: string): Promise<Forecast> {
     console.log(`[WeatherApiClient] Fetching forecast for '${city}'...`);
 
     if (this.remainingFailures > 0) {
@@ -102,7 +129,7 @@ class WeatherApiClient {
     }
 
     // Simulated response
-    const forecast = {
+    const forecast: Forecast = {
       city,
       temp: 22,
       condition: "Partly cloudy",
@@ -112,7 +139,7 @@ class WeatherApiClient {
     return forecast;
   }
 
-  async fetchForecastInvalidKey(city) {
+  async fetchForecastInvalidKey(city: string): Promise<Forecast> {
     console.log(`[WeatherApiClient] Fetching forecast for '${city}'...`);
     throw new PermanentError(
       "401 Unauthorized: invalid API key (do not retry)",
@@ -156,7 +183,7 @@ class WeatherApiClient {
   try {
     await executor.execute(() => client.fetchForecast("Santiago"));
   } catch (err) {
-    console.log(`Final error: ${err.message}\n`);
+    console.log(`Final error: ${errorMessage(err)}\n`);
   }
 
   // Case 5: permanent error — aborts immediately
@@ -165,6 +192,6 @@ class WeatherApiClient {
   try {
     await executor.execute(() => client.fetchForecastInvalidKey("Caracas"));
   } catch (err) {
-    console.log(`Final error: ${err.message}`);
+    console.log(`Final error: ${errorMessage(err)}`);
   }
 })();
