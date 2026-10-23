@@ -84,8 +84,8 @@ gofmt -l . && go vet example.go     # Go (go vet runs per example folder)
 
 ## Continuous integration
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and pull request,
-with one job per language on its own fresh VM:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request and on every
+push to `main`, with one job per language on its own fresh VM:
 
 | Job | Lint | Run |
 |---|---|---|
